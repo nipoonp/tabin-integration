@@ -1,0 +1,33 @@
+service: integration
+
+plugins:
+    - serverless-plugin-typescript
+    - serverless-offline
+    - serverless-dynamodb-local
+
+provider:
+    name: aws
+    runtime: nodejs14.x
+    region: ap-south-1
+    profile: "tabin-nipoon"
+    stage: "dev"
+
+functions:
+    import-menu:
+        name: integration-import-menu-dev
+        handler: src/handlers/importMenu.handler
+
+    create-order:
+        name: integration-create-order-dev
+        handler: src/handlers/createOrder.handler
+        environment:
+            RESTAURANT_TABLE_NAME: "Restaurant-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+        events:
+            - stream:
+                  type: dynamodb
+                  arn: arn:aws:dynamodb:ap-south-1:319846238176:table/order-table/stream/2023-03-12T11:58:23.529
+                  batchSize: 100
+                  startingPosition: LATEST
+            - httpApi:
+                  path: /order
+                  method: get
