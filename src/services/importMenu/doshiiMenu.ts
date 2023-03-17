@@ -6,48 +6,56 @@ import {
     IProductModifierGroupLink,
     IModifier,
     IModifierGroupModifierLink,
+    IThirdPartyIntegrationsDoshii,
 } from "../../model/interface";
-import { token } from "../common/generateToken";
 
 import axios from "axios";
+import { sign } from "jsonwebtoken";
 
-const menuAPI = () => {
-    let headers = {
-        Authorization: "Bearer" + " " + token,
-        Accept: "application/json",
-        "doshii-location-id": "kMMgKnGbE",
-    };
-    return new Promise(function (resolve, reject) {
-        axios({
-            method: "get",
-            url: "https://sandbox.doshii.co/partner/v3/locations/kMMgKnGbE/menu",
-            headers: headers,
-        })
-            .then(async (result: any) => {
-                if (result.data) {
-                    // console.log("result Data", result.data);
-                    resolve(result.data);
-                }
-            })
-            .catch((err: any) => {
-                console.log(err);
-                reject(err);
+const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const token = sign(
+                {
+                    clientId: doshiiCredentials.clientId,
+                    timestamp: new Date(),
+                },
+                doshiiCredentials.clientSecret
+            );
+
+            let headers = {
+                Authorization: "Bearer" + " " + token,
+                Accept: "application/json",
+                "doshii-location-id": doshiiCredentials.locationId,
+            };
+
+            const result: any = await axios({
+                method: "get",
+                url: `https://sandbox.doshii.co/partner/v3/locations/${doshiiCredentials.locationId}/menu`,
+                headers: headers,
             });
+
+            if (result.data) resolve(result.data);
+        } catch (e) {
+            reject(e);
+        }
     });
 };
 
-const convertDoshiiMenu = async () => {
-    let categoryArray: ICategory[] = [];
-    let productArray: IProduct[] = [];
-    let categoryProductLinkArray: ICategoryProductLink[] = [];
-    let modifierGroupArray: IModifierGroup[] = [];
-    let productModGroupLinkArray: IProductModifierGroupLink[] = [];
-    let modifierGroupModifierLinkArray: IModifierGroupModifierLink[] = [];
-    let modifierArray: IModifier[] = [];
+const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+    let categories: ICategory[] = [];
+    let products: IProduct[] = [];
+    let categoryProductLinks: ICategoryProductLink[] = [];
+    let modifierGroups: IModifierGroup[] = [];
+    let productModifierGroupLinks: IProductModifierGroupLink[] = [];
+    let modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
+    let modifiers: IModifier[] = [];
 
-    let data: any = await menuAPI();
+    let data: any = await menuAPI(doshiiCredentials);
+
     let productsData = data.products;
     let sequence = 0;
+
     if (productsData.length > 0) {
         productsData.map((item: any) => {
             sequence++;
@@ -58,7 +66,8 @@ const convertDoshiiMenu = async () => {
                 description: "",
                 displaySequence: sequence,
             };
-            categoryArray.push(category);
+
+            categories.push(category);
 
             let product: IProduct = {
                 productId: item.posId,
@@ -69,14 +78,16 @@ const convertDoshiiMenu = async () => {
                 totalQuantityAvailable: 0,
                 description: item.description,
             };
-            productArray.push(product);
+
+            products.push(product);
 
             let categoryProductLink: ICategoryProductLink = {
                 categoryId: item.tags.join(" ") + "-" + sequence,
                 productId: item.posId,
                 displaySequence: sequence,
             };
-            categoryProductLinkArray.push(categoryProductLink);
+
+            categoryProductLinks.push(categoryProductLink);
 
             if (item.includedItems.length > 0) {
                 let includedItems = item.includedItems;
@@ -90,17 +101,20 @@ const convertDoshiiMenu = async () => {
                         totalQuantityAvailable: innerItem1.quantity,
                         description: "",
                     };
-                    productArray.push(product);
+                    products.push(product);
 
                     let categoryProductLink: ICategoryProductLink = {
                         categoryId: item.tags.join(" ") + "-" + sequence,
                         productId: innerItem1.posId,
                         displaySequence: sequence,
                     };
-                    categoryProductLinkArray.push(categoryProductLink);
+
+                    categoryProductLinks.push(categoryProductLink);
+
                     if (innerItem1.options.length > 0) {
                         let innerOptions = innerItem1.options;
-                        innerOptions.map((opt: any) => {
+
+                        innerOptions.map((opt: any, index: number) => {
                             let modgroup: IModifierGroup = {
                                 modifierGroupId: opt.posId,
                                 name: opt.name,
@@ -108,27 +122,34 @@ const convertDoshiiMenu = async () => {
                                 choiceMin: opt.min,
                                 choiceMax: opt.max,
                             };
-                            modifierGroupArray.push(modgroup);
+
+                            modifierGroups.push(modgroup);
+
                             let productModGroupLink: IProductModifierGroupLink = {
                                 productId: innerItem1.posId,
                                 modifierGroupId: opt.posId,
+                                displaySequence: index,
                             };
-                            productModGroupLinkArray.push(productModGroupLink);
+
+                            productModifierGroupLinks.push(productModGroupLink);
                             if (opt.variants && opt.variants.length > 0) {
                                 let variants = opt.variants;
-                                variants.map((v: any) => {
+
+                                variants.map((v: any, index2: number) => {
                                     let modobj: IModifier = {
                                         modifierId: v.posId,
                                         name: v.name,
                                         price: v.price,
                                     };
-                                    modifierArray.push(modobj);
+                                    modifiers.push(modobj);
 
                                     let modifierGroupModifierLink: IModifierGroupModifierLink = {
                                         modifierGroupId: opt.posId,
                                         modifierId: v.posId,
+                                        displaySequence: index2,
                                     };
-                                    modifierGroupModifierLinkArray.push(modifierGroupModifierLink);
+
+                                    modifierGroupModifierLinks.push(modifierGroupModifierLink);
                                 });
                             }
                         });
@@ -138,7 +159,7 @@ const convertDoshiiMenu = async () => {
 
             if (item.options.length > 0) {
                 let itemOptions = item.options;
-                itemOptions.map((opt: any) => {
+                itemOptions.map((opt: any, index: number) => {
                     let modgroup: IModifierGroup = {
                         modifierGroupId: opt.posId,
                         name: opt.name,
@@ -146,48 +167,58 @@ const convertDoshiiMenu = async () => {
                         choiceMin: opt.min,
                         choiceMax: opt.max,
                     };
-                    modifierGroupArray.push(modgroup);
+
+                    modifierGroups.push(modgroup);
+
                     let productModGroupLink: IProductModifierGroupLink = {
                         productId: item.posId,
                         modifierGroupId: opt.posId,
+                        displaySequence: index,
                     };
-                    productModGroupLinkArray.push(productModGroupLink);
+
+                    productModifierGroupLinks.push(productModGroupLink);
+
                     if (opt.variants && opt.variants.length > 0) {
                         let variants = opt.variants;
-                        variants.map((v: any) => {
+
+                        variants.map((v: any, index2: number) => {
                             let modobj: IModifier = {
                                 modifierId: v.posId,
                                 name: v.name,
                                 price: v.price,
                             };
-                            modifierArray.push(modobj);
+
+                            modifiers.push(modobj);
+
                             let modifierGroupModifierLink: IModifierGroupModifierLink = {
                                 modifierGroupId: opt.posId,
                                 modifierId: v.posId,
+                                displaySequence: index2,
                             };
-                            modifierGroupModifierLinkArray.push(modifierGroupModifierLink);
+
+                            modifierGroupModifierLinks.push(modifierGroupModifierLink);
                         });
                     }
                 });
             }
         });
     }
-    // console.log("categoryArray", categoryArray);
-    // console.log("productArray", productArray);
-    // console.log("categoryProductLinkArray", categoryProductLinkArray);
-    // console.log("modifierGroupArray", modifierGroupArray);
-    // console.log("productModGroupLinkArray", productModGroupLinkArray);
-    // console.log("modifierGroupModifierLinkArray", modifierGroupModifierLinkArray);
-    // console.log("modifierArray", modifierArray);
+    // console.log("categories", categories);
+    // console.log("products", products);
+    // console.log("categoryProductLinks", categoryProductLinks);
+    // console.log("modifierGroups", modifierGroups);
+    // console.log("productModifierGroupLinks", productModifierGroupLinks);
+    // console.log("modifierGroupModifierLinks", modifierGroupModifierLinks);
+    // console.log("modifiers", modifiers);
 
     return {
-        categoryArray: categoryArray,
-        productArray: productArray,
-        categoryProductLinkArray: categoryProductLinkArray,
-        modifierGroupArray: modifierGroupArray,
-        productModGroupLinkArray: productModGroupLinkArray,
-        modifierGroupModifierLinkArray: modifierGroupModifierLinkArray,
-        modifierArray: modifierArray,
+        categories: categories,
+        products: products,
+        categoryProductLinks: categoryProductLinks,
+        modifierGroups: modifierGroups,
+        productModifierGroupLinks: productModifierGroupLinks,
+        modifierGroupModifierLinks: modifierGroupModifierLinks,
+        modifiers: modifiers,
     };
 };
 

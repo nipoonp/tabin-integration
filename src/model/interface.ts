@@ -156,19 +156,20 @@ export interface IWIZBANG_ORDER {
 }
 
 export interface ITABIN_ITEMS {
-    categoryArray: ICategory[];
-    productArray: IProduct[];
-    categoryProductLinkArray: ICategoryProductLink[];
-    modifierGroupArray: IModifierGroup[];
-    productModGroupLinkArray: IProductModifierGroupLink[];
-    modifierGroupModifierLinkArray: IModifierGroupModifierLink[];
-    modifierArray: IModifier[];
+    categories: ICategory[];
+    products: IProduct[];
+    categoryProductLinks: ICategoryProductLink[];
+    modifierGroups: IModifierGroup[];
+    productModifierGroupLinks: IProductModifierGroupLink[];
+    modifierGroupModifierLinks: IModifierGroupModifierLink[];
+    modifiers: IModifier[];
 }
 
 export interface ICategory {
     categoryId: string;
     name: string;
     kitchenName: string;
+    description: string;
     displaySequence: number;
 }
 
@@ -181,6 +182,7 @@ export interface ICategoryProductLink {
 export interface IProduct {
     productId: string;
     name: string;
+    description: string;
     kitchenName: string;
     price: number;
     skuCode: string;
@@ -190,6 +192,7 @@ export interface IProduct {
 export interface IProductModifierGroupLink {
     productId: string;
     modifierGroupId: string;
+    displaySequence: number;
 }
 
 export interface IModifierGroup {
@@ -203,6 +206,7 @@ export interface IModifierGroup {
 export interface IModifierGroupModifierLink {
     modifierGroupId: string;
     modifierId: string;
+    displaySequence: number;
 }
 
 export interface IModifier {
@@ -314,55 +318,6 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     productModifiers?: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
     image?: IS3Object | null;
 }
-
-export interface ICategory {
-    categoryId: string;
-    name: string;
-    kitchenName: string;
-    description: string;
-    displaySequence: number;
-}
-
-export interface ICategoryProductLink {
-    categoryId: string;
-    productId: string;
-    displaySequence: number;
-}
-
-export interface IProduct {
-    productId: string;
-    name: string;
-    description: string;
-    kitchenName: string;
-    price: number;
-    skuCode: string;
-    totalQuantityAvailable: number;
-}
-
-export interface IProductModifierGroupLink {
-    productId: string;
-    modifierGroupId: string;
-}
-
-export interface IModifierGroup {
-    modifierGroupId: string;
-    name: string;
-    choiceDuplicate: number;
-    choiceMin: number;
-    choiceMax: number;
-}
-
-export interface IModifierGroupModifierLink {
-    modifierGroupId: string;
-    modifierId: string;
-}
-
-export interface IModifier {
-    modifierId: string;
-    name: string;
-    price: number;
-}
-
 export interface IDOSHIORDER {
     externalOrderRef: string;
     manuallyProcessed: boolean | false;
@@ -470,4 +425,32 @@ export interface IDOSHIORDERFINALDATA {
     consumer: IDOSHICONSUMER;
     transactions: Array<IDOSHITRANSACTIONS>;
     members: [];
+}
+
+export interface IThirdPartyIntegrations {
+    enable: boolean | null;
+    shift8: IThirdPartyIntegrationsShift8 | null;
+    wizBang: IThirdPartyIntegrationsWizBang | null;
+    doshii: IThirdPartyIntegrationsDoshii | null;
+}
+
+export interface IThirdPartyIntegrationsShift8 {
+    enable: boolean;
+    storeApiUrl: string;
+    storeUuid: string;
+    storeLocationNumber: string;
+}
+
+export interface IThirdPartyIntegrationsWizBang {
+    enable: boolean;
+    storeApiUrl: string;
+    username: string;
+    password: string;
+}
+
+export interface IThirdPartyIntegrationsDoshii {
+    enable: boolean;
+    clientId: string;
+    clientSecret: string;
+    locationId: string;
 }

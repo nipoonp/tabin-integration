@@ -6,13 +6,15 @@ import {
     IProductModifierGroupLink,
     IModifier,
     IModifierGroupModifierLink,
+    IThirdPartyIntegrationsWizBang,
 } from "../../model/interface";
+import { convertDollarsToCentsReturnInt } from "../../util/util";
 
 import axios from "axios";
 
-const menuAPI = () => {
-    let username = "admin";
-    let password = "admin";
+const menuAPI = (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
+    let username = wizBangCredentials.username;
+    let password = wizBangCredentials.password;
     let encodedBase64Token = Buffer.from(`${username}:${password}`).toString("base64");
     let authorization = `Basic ${encodedBase64Token}`;
     authorization = authorization.replace(/[\r\n]+/gm, "");
@@ -27,7 +29,7 @@ const menuAPI = () => {
         try {
             const result: any = await axios({
                 method: "get",
-                url: "http://203.109.232.106:5585/wizbang/restapi/setup/menu",
+                url: `${wizBangCredentials.storeApiUrl}wizbang/restapi/setup/menu`,
                 headers: headers,
             });
 
@@ -39,17 +41,17 @@ const menuAPI = () => {
     });
 };
 
-const convertWizBangMenu = async () => {
+const convertWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
     try {
-        let categoryArray: ICategory[] = [];
-        let productArray: IProduct[] = [];
-        let categoryProductLinkArray: ICategoryProductLink[] = [];
-        let modifierGroupArray: IModifierGroup[] = [];
-        let productModGroupLinkArray: IProductModifierGroupLink[] = [];
-        let modifierGroupModifierLinkArray: IModifierGroupModifierLink[] = [];
-        let modifierArray: IModifier[] = [];
+        let categories: ICategory[] = [];
+        let products: IProduct[] = [];
+        let categoryProductLinks: ICategoryProductLink[] = [];
+        let modifierGroups: IModifierGroup[] = [];
+        let productModifierGroupLinks: IProductModifierGroupLink[] = [];
+        let modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
+        let modifiers: IModifier[] = [];
 
-        const data: any = await menuAPI();
+        const data: any = await menuAPI(wizBangCredentials);
 
         let result = data.result;
 
@@ -74,7 +76,7 @@ const convertWizBangMenu = async () => {
                                 displaySequence: food.ItemGroupOrder,
                             };
 
-                            categoryArray.push(category);
+                            categories.push(category);
                             let itemsArray = food.Items ? food.Items : [];
 
                             if (itemsArray.length > 0) {
@@ -84,17 +86,17 @@ const convertWizBangMenu = async () => {
                                         name: item.ItemAbbrev,
                                         kitchenName: "",
                                         description: "",
-                                        price: item.ItemPrice,
+                                        price: convertDollarsToCentsReturnInt(item.ItemPrice),
                                         skuCode: item.Barcode,
                                         totalQuantityAvailable: item.AvailQty,
                                     };
-                                    productArray.push(product);
+                                    products.push(product);
                                     let categoryProductLink: ICategoryProductLink = {
                                         categoryId: item.ItemGroupID,
                                         productId: item.ItemID,
                                         displaySequence: item.ItemOrder,
                                     };
-                                    categoryProductLinkArray.push(categoryProductLink);
+                                    categoryProductLinks.push(categoryProductLink);
                                 });
                             }
                         });
@@ -110,7 +112,7 @@ const convertWizBangMenu = async () => {
                                 kitchenName: bev.ItemGroupAbbrev,
                                 displaySequence: bev.ItemGroupOrder,
                             };
-                            categoryArray.push(category);
+                            categories.push(category);
                             let itemsArray = bev.Items ? bev.Items : [];
 
                             if (itemsArray.length > 0) {
@@ -120,17 +122,17 @@ const convertWizBangMenu = async () => {
                                         name: item.ItemAbbrev,
                                         kitchenName: "",
                                         description: "",
-                                        price: item.ItemPrice,
+                                        price: convertDollarsToCentsReturnInt(item.ItemPrice),
                                         skuCode: item.Barcode,
                                         totalQuantityAvailable: item.AvailQty,
                                     };
-                                    productArray.push(product);
+                                    products.push(product);
                                     let categoryProductLink: ICategoryProductLink = {
                                         categoryId: item.ItemGroupID,
                                         productId: item.ItemID,
                                         displaySequence: item.ItemOrder,
                                     };
-                                    categoryProductLinkArray.push(categoryProductLink);
+                                    categoryProductLinks.push(categoryProductLink);
                                 });
                             }
                         });
@@ -153,26 +155,28 @@ const convertWizBangMenu = async () => {
                     };
 
                     if (itemsListArray.length > 0) {
-                        itemsListArray.map((item: any) => {
-                            let productModGroupLink: IProductModifierGroupLink = {
+                        itemsListArray.map((item: any, index) => {
+                            let productModifierGroupLink: IProductModifierGroupLink = {
                                 productId: item,
                                 modifierGroupId: modGroup.ModGroupID,
+                                displaySequence: index,
                             };
-                            productModGroupLinkArray.push(productModGroupLink);
+                            productModifierGroupLinks.push(productModifierGroupLink);
                         });
                     }
 
                     if (modifierListArray.length > 0) {
-                        modifierListArray.map((modifier: any) => {
+                        modifierListArray.map((modifier: any, index) => {
                             let modifierGroupModifierLink: IModifierGroupModifierLink = {
                                 modifierGroupId: modGroup.ModGroupID,
                                 modifierId: modifier,
+                                displaySequence: index,
                             };
-                            modifierGroupModifierLinkArray.push(modifierGroupModifierLink);
+                            modifierGroupModifierLinks.push(modifierGroupModifierLink);
                         });
                     }
 
-                    modifierGroupArray.push(modgroup);
+                    modifierGroups.push(modgroup);
                 });
             }
 
@@ -182,29 +186,29 @@ const convertWizBangMenu = async () => {
                     let modobj: IModifier = {
                         modifierId: modifier.ModifierID,
                         name: modifier.Modifier,
-                        price: modifier.ModPrice,
+                        price: modifier.ModPrice ? convertDollarsToCentsReturnInt(modifier.ModPrice) : 0,
                     };
-                    modifierArray.push(modobj);
+                    modifiers.push(modobj);
                 });
             }
         });
 
-        // console.log("categoryArray", categoryArray);
-        // console.log("productArray", productArray);
-        // console.log("categoryProductLinkArray", categoryProductLinkArray);
-        // console.log("modifierGroupArray", modifierGroupArray);
-        // console.log("productModGroupLinkArray", productModGroupLinkArray);
-        // console.log("modifierGroupModifierLinkArray", modifierGroupModifierLinkArray);
-        // console.log("modifierArray", modifierArray);
+        // console.log("categories", categories);
+        // console.log("products", products);
+        // console.log("categoryProductLinks", categoryProductLinks);
+        // console.log("modifierGroups", modifierGroups);
+        // console.log("productModifierGroupLinks", productModifierGroupLinks);
+        // console.log("modifierGroupModifierLinks", modifierGroupModifierLinks);
+        // console.log("modifiers", modifiers);
 
         return {
-            categoryArray: categoryArray,
-            productArray: productArray,
-            categoryProductLinkArray: categoryProductLinkArray,
-            modifierGroupArray: modifierGroupArray,
-            productModGroupLinkArray: productModGroupLinkArray,
-            modifierGroupModifierLinkArray: modifierGroupModifierLinkArray,
-            modifierArray: modifierArray,
+            categories: categories,
+            products: products,
+            categoryProductLinks: categoryProductLinks,
+            modifierGroups: modifierGroups,
+            productModifierGroupLinks: productModifierGroupLinks,
+            modifierGroupModifierLinks: modifierGroupModifierLinks,
+            modifiers: modifiers,
         };
     } catch (err) {
         throw err;

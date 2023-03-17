@@ -8,26 +8,37 @@ plugins:
 provider:
     name: aws
     runtime: nodejs14.x
-    region: ap-south-1
+    region: ap-southeast-2
     profile: "tabin-nipoon"
     stage: "dev"
+    iam:
+        role:
+            statements:
+                - Effect: "Allow"
+                  Action:
+                      - "dynamodb:Query"
+                      - "dynamodb:PutItem"
+                  Resource:
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Restaurant-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Category-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Product-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroup-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Modifier-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/CategoryProductLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ProductModifierGroupLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroupModifierLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
 
 functions:
     import-menu:
         name: integration-import-menu-dev
         handler: src/handlers/importMenu.handler
-
-    create-order:
-        name: integration-create-order-dev
-        handler: src/handlers/createOrder.handler
+        timeout: 120
         environment:
             RESTAURANT_TABLE_NAME: "Restaurant-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
-        events:
-            - stream:
-                  type: dynamodb
-                  arn: arn:aws:dynamodb:ap-south-1:319846238176:table/order-table/stream/2023-03-12T11:58:23.529
-                  batchSize: 100
-                  startingPosition: LATEST
-            - httpApi:
-                  path: /order
-                  method: get
+            CATEGORY_TABLE_NAME: "Category-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            PRODUCT_TABLE_NAME: "Product-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            MODIFIER_GROUP_TABLE_NAME: "ModifierGroup-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            MODIFIER_TABLE_NAME: "Modifier-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            CATEGORY_PRODUCT_LINK_TABLE_NAME: "CategoryProductLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            PRODUCT_MODIFIER_GROUP_LINK_TABLE_NAME: "ProductModifierGroupLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            MODIFIER_GROUP_MODIFIER_LINK_TABLE_NAME: "ModifierGroupModifierLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
