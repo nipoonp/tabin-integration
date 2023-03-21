@@ -66,7 +66,7 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     id: string;
     name: string;
     price: number;
-    totalPrice?: number;
+    totalPrice: number;
     discount?: number;
     quantity: number;
     notes?: string | null;

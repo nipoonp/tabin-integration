@@ -18,48 +18,12 @@ import axios from "axios";
 
 import { sign } from "jsonwebtoken";
 
-let consumer: IDOSHII_CONSUMER = {
-    name: "Tabin",
-    email: "dev@tabin.co.nz",
-    phone: "+642102828894",
-    address: {
-        line1: "1824B River Road,",
-        line2: " Flagstaff",
-        city: "Hamilton",
-        state: "Hamilton",
-        postalCode: "3210",
-        country: "NZ",
-        notes: "Tabin Kiosk",
-    },
-};
-
 let log: IDOSHII_LOG = {
     employeePosRef: "100",
     employeeName: "Tabin",
     deviceRef: "Tabin Kiosk",
     deviceName: "Tabin Kiosk",
     area: "Tabin Kiosk",
-};
-
-let order: IDOSHII_ORDER = {
-    externalOrderRef: "",
-    manuallyProcessed: false,
-    status: "pending",
-    type: "",
-    notes: "",
-    requiredAt: "",
-    availableEta: "",
-    items: [],
-    surcounts: [],
-    taxes: [],
-    log: log,
-};
-
-const convertedData: IDOSHII_ORDER_FINAL_DATA = {
-    order: order,
-    consumer: consumer,
-    transactions: [],
-    members: [],
 };
 
 const createOrder = (doshiiCredentials: IThirdPartyIntegrationsDoshii, convertedData: IDOSHII_ORDER_FINAL_DATA) => {
@@ -95,22 +59,29 @@ const createOrder = (doshiiCredentials: IThirdPartyIntegrationsDoshii, converted
 };
 
 const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrationMappings: IINTEGRATION_MAPPINGS) => {
-    order.externalOrderRef = tabinOrder.id;
-    // order.status = tabinOrder.status; // Status is mandotory with "pending" Value
-    order.type = tabinOrder.type == "TAKEAWAY" ? "pickup" : "dinein";
-    order.requiredAt = tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt;
-    order.availableEta = tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt;
-    order.notes = tabinOrder.notes || "TABIN ORDER";
+    let order: IDOSHII_ORDER = {
+        externalOrderRef: tabinOrder.id,
+        manuallyProcessed: false,
+        status: "pending",
+        type: tabinOrder.type == "TAKEAWAY" ? "pickup" : "dinein",
+        notes: tabinOrder.notes || "TABIN ORDER",
+        requiredAt: tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt,
+        availableEta: tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt,
+        items: [],
+        surcounts: [],
+        taxes: [],
+        log: log,
+    };
 
     for (let product of tabinOrder.products) {
         let items: IDOSHII_ITEMS = {
-            posId: "",
-            name: "",
-            quantity: 0,
-            description: "",
-            unitPrice: "",
-            totalBeforeSurcounts: "",
-            totalAfterSurcounts: "",
+            posId: integrationMappings[`${product.id}_${EIntegrationType.DOSHII}`].externalItemId,
+            name: product.name,
+            quantity: product.quantity,
+            description: product.name,
+            unitPrice: product.price.toString(),
+            totalBeforeSurcounts: (product.totalPrice * product.quantity).toString(),
+            totalAfterSurcounts: (product.totalPrice * product.quantity).toString(),
             tags: [],
             type: "single",
             // includedItems: [],
@@ -118,22 +89,15 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
             taxes: [],
             options: [],
         };
+
         let orderTaxes: IDOSHII_ITEMS_TAXES = {
             posId: product.id,
             name: product.name,
             amount: "15",
             type: "percentage",
             taxType: "inclusive",
-            value: product.price.toString(),
+            value: (product.price * product.quantity).toString(),
         };
-
-        items.posId = integrationMappings[`${product.id}_${EIntegrationType.DOSHII}`].externalItemId;
-        items.name = product.name;
-        items.quantity = product.quantity;
-        items.description = product.name;
-        items.unitPrice = product.price.toString();
-        items.totalAfterSurcounts = product.price.toString();
-        items.totalBeforeSurcounts = product.price.toString();
 
         if (product.category?.name) {
             let categoryName = product.category?.name;
@@ -143,29 +107,20 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         if (product.modifierGroups) {
             for (let modifierGroup of product.modifierGroups) {
                 let options: IDOSHII_ITEMS_OPTIONS = {
-                    posId: "",
-                    name: "",
+                    posId: integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId,
+                    name: modifierGroup.name,
                     variants: [],
                 };
-
-                options.posId = integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId;
-                options.name = modifierGroup.name;
 
                 if (modifierGroup.modifiers) {
                     for (let modifier of modifierGroup.modifiers) {
                         let variants: IDOSHII_ITEMS_OPTIONS_VARIANTS = {
-                            posId: "",
-                            name: "",
-                            price: "",
+                            posId: integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
+                            name: modifier.name,
+                            price: modifier.price.toString(),
                         };
 
-                        variants.posId = integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId;
-                        variants.name = modifier.name;
-                        variants.price = modifier.price.toString();
-
-                        for (var i = 0; i < modifier.quantity; i++) {
-                            options.variants.push(variants);
-                        }
+                        options.variants.push(variants);
                     }
                 }
 
@@ -186,9 +141,25 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         order.taxes.push(orderTaxes);
     }
 
-    convertedData.consumer.name = tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : consumer.name;
-    convertedData.consumer.email = tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : consumer.email;
-    convertedData.consumer.phone = tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : consumer.phone;
+    const convertedData: IDOSHII_ORDER_FINAL_DATA = {
+        order: order,
+        consumer: {
+            name: tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : "Tabin",
+            email: tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : "dev@tabin.co.nz",
+            phone: tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : "+642102828894",
+            address: {
+                line1: "1824B River Road,",
+                line2: " Flagstaff",
+                city: "Hamilton",
+                state: "Hamilton",
+                postalCode: "3210",
+                country: "NZ",
+                notes: "Tabin Kiosk",
+            },
+        },
+        transactions: [],
+        members: [],
+    };
 
     let transactions: IDOSHII_TRANSACTIONS = {
         amount: tabinOrder.payments && tabinOrder.payments.length > 0 ? tabinOrder.payments[0].amount : 0,
