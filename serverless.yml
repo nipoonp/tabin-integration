@@ -27,6 +27,7 @@ provider:
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/CategoryProductLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ProductModifierGroupLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroupModifierLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
 
 functions:
     import-menu:
@@ -42,3 +43,17 @@ functions:
             CATEGORY_PRODUCT_LINK_TABLE_NAME: "CategoryProductLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
             PRODUCT_MODIFIER_GROUP_LINK_TABLE_NAME: "ProductModifierGroupLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
             MODIFIER_GROUP_MODIFIER_LINK_TABLE_NAME: "ModifierGroupModifierLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            INTEGRATION_MAPPING_TABLE_NAME: "IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+            DOSHII_API_BASE_URL: "https://sandbox.doshii.co/"
+
+    create-order:
+        name: integration-create-order-dev
+        handler: src/handlers/createOrder.handler
+        timeout: 120
+        environment:
+            SHIFT8_API_CONFIG_SECRET_ID: "prod/shift8/api_config"
+            SHIFT8_API_TOKEN_SECRET_ID: "prod/shift8/api_token"
+            SHIFT8_PAYMENT_TYPE_NUMBER: "9972"
+            SHIFT8_PAYMENT_MEDIA_NAME: "Kiosk Payment"
+            SHIFT8_RESPONSE_URL: "https://yez941zubk.execute-api.ap-southeast-2.amazonaws.com/prod/order-response"
+            DOSHII_API_BASE_URL: "https://sandbox.doshii.co/"

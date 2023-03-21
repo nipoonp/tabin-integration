@@ -1,48 +1,50 @@
 import {
     IGET_RESTAURANT_ORDER_FRAGMENT,
-    IDOSHIORDERFINALDATA,
-    IDOSHIORDER,
+    IDOSHII_ORDER_FINAL_DATA,
+    IDOSHII_ORDER,
     IDOSHIITEMS,
     IDOSHIITEMSOPTIONS,
     IDOSHIITEMSOPTIONSVARIANTS,
-    IDOSHICONSUMER,
+    IDOSHII_CONSUMER,
     IDOSHIITEMSTAXES,
-    IDOSHILOG,
-    IDOSHITRANSACTIONS,
-} from "./Interfaces";
+    IDOSHII_LOG,
+    IDOSHII_TRANSACTIONS,
+} from "../../model/interface";
 
 import axios from "axios";
-import { token } from "../common/generateToken";
+import { IThirdPartyIntegrationsDoshii } from "../../Model/Interface";
 
-let consumer: IDOSHICONSUMER = {
-    name: "test",
-    email: "test",
-    phone: "test",
+import { sign } from "jsonwebtoken";
+
+let consumer: IDOSHII_CONSUMER = {
+    name: "Tabin",
+    email: "dev@tabin.co.nz",
+    phone: "+642102828894",
     address: {
-        line1: "test",
-        line2: "test",
-        city: "test",
-        state: "test",
-        postalCode: "test",
-        country: "AU",
-        notes: "test",
+        line1: "1824B River Road,",
+        line2: " Flagstaff",
+        city: "Hamilton",
+        state: "Hamilton",
+        postalCode: "3210",
+        country: "NZ",
+        notes: "Tabin Kiosk",
     },
 };
 
-let log: IDOSHILOG = {
-    employeePosRef: "11",
-    employeeName: "Nitish",
-    deviceRef: "11",
-    deviceName: "a1",
-    area: "main",
+let log: IDOSHII_LOG = {
+    employeePosRef: "100",
+    employeeName: "Tabin",
+    deviceRef: "Tabin Kiosk",
+    deviceName: "Tabin Kiosk",
+    area: "Tabin Kiosk",
 };
 
-let order: IDOSHIORDER = {
-    externalOrderRef: "",
+let order: IDOSHII_ORDER = {
+    externalOrderRef: "Tabin Order ID",
     manuallyProcessed: false,
     status: "pending",
     type: "",
-    notes: "order 1",
+    notes: "Tabin Note",
     requiredAt: "",
     availableEta: "",
     items: [],
@@ -51,42 +53,48 @@ let order: IDOSHIORDER = {
     log: log,
 };
 
-const convertedData: IDOSHIORDERFINALDATA = {
+const convertedData: IDOSHII_ORDER_FINAL_DATA = {
     order: order,
     consumer: consumer,
     transactions: [],
     members: [],
 };
 
-const createOrder = (convertedData: IDOSHIORDERFINALDATA) => {
-    let headers = {
-        Authorization: "Bearer" + " " + token,
-        Accept: "application/json",
-        "doshii-location-id": "kMMgKnGbE",
-    };
-    return new Promise(function (resolve, reject) {
-        axios({
-            method: "post",
-            url: "https://sandbox.doshii.co/partner/v3/orders",
-            headers: headers,
-            data: convertedData,
-        })
-            .then(async (result: any) => {
-                if (result.data) {
-                    console.log("result Data", result.data);
-                    // resolve(result.data);
-                }
-            })
-            .catch((err: any) => {
-                console.log(err);
-                reject(err);
+const createOrder = (doshiiCredentials: IThirdPartyIntegrationsDoshii, convertedData: IDOSHII_ORDER_FINAL_DATA) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const token = sign(
+                {
+                    clientId: doshiiCredentials.clientId,
+                    timestamp: new Date(),
+                },
+                doshiiCredentials.clientSecret
+            );
+
+            let headers = {
+                Authorization: "Bearer" + " " + token,
+                Accept: "application/json",
+                "doshii-location-id": doshiiCredentials.locationId,
+            };
+
+            const result: any = await axios({
+                method: "post",
+                url: `${process.env.DOSHII_API_BASE_URL}partner/v3/orders`,
+                headers: headers,
+                data: convertedData,
             });
+
+            if (result.data) resolve(result.data);
+        } catch (e) {
+            console.error(e);
+            reject(e);
+        }
     });
 };
 
 const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     order.externalOrderRef = tabinOrder.id;
-    // order.status = tabinOrder.status;
+    // order.status = tabinOrder.status; // Status is mandotory with "pending" Value
     order.type = tabinOrder.type == "TAKEAWAY" ? "pickup" : "dinein";
     order.requiredAt = tabinOrder.placedAt ? tabinOrder.placedAt : "";
     order.availableEta = tabinOrder.completedAt ? tabinOrder.completedAt : "";
@@ -162,10 +170,10 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         order.items.push(items);
         order.taxes.push(orderTaxes);
     }
-    // convertedData.consumer.name = tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : "test";
-    // convertedData.consumer.email = tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : "test";
-    // convertedData.consumer.phone = tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : "test";
-    let transactions: IDOSHITRANSACTIONS = {
+    convertedData.consumer.name = tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : consumer.name;
+    convertedData.consumer.email = tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : consumer.email;
+    convertedData.consumer.phone = tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : consumer.phone;
+    let transactions: IDOSHII_TRANSACTIONS = {
         amount: tabinOrder.payments && tabinOrder.payments.length > 0 ? tabinOrder.payments[0].amount : 0,
         reference: "",
         invoice: "",
@@ -181,12 +189,13 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         surcounts: [],
     };
     convertedData.transactions.push(transactions);
+
     return convertedData;
 };
 
-const createDoshiiOrder = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const createDoshiiOrder = async (doshiiCredentials: IThirdPartyIntegrationsDoshii, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     const convertedData = convertDoshiiOrder(order);
-    const result = await createOrder(convertedData);
+    const result = await createOrder(doshiiCredentials, convertedData);
 
     return result;
 };

@@ -1,4 +1,4 @@
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../Model/Interface";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IThirdPartyIntegrationsShift8 } from "../../Model/Interface";
 
 const axios = require("axios");
 const AWS = require("aws-sdk");
@@ -7,6 +7,28 @@ const secretManager = new AWS.SecretsManager({ region: process.env.REGION });
 AWS.config.update({ region: process.env.REGION });
 
 var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
+
+interface IShift8Item {
+    ItemID: number;
+    ItemPLU: number;
+    ItemName: string;
+    ItemIncTax: number;
+    ItemTax: number;
+    ItemExTax: number;
+    ItemTaxRate: number;
+    ItemNotes: string;
+    ItemMods: IShift8Mod[];
+}
+
+interface IShift8Mod {
+    ModPLU: number;
+    ModName: string;
+    ModIncTax: number;
+    ModTax: number;
+    ModExTax: number;
+    ModTaxRate: number;
+    ModNotes: string;
+}
 
 const taxRate = 0.15;
 
@@ -17,8 +39,8 @@ const calculateTaxAmount = (total) => {
     return total - diff;
 };
 
-const createOrder = async (order) => {
-    const url = `${shift8StoreApiUrl}/ExternalSale?UID=${shift8StoreUuid}&LocationNumber=${shift8StoreLocationNumber}&LocationName=${"Sylvia Park"}`;
+const createOrder = async (shift8Credentials: IThirdPartyIntegrationsShift8, accessToken: string, shift8Order) => {
+    const url = `${shift8Credentials.storeApiUrl}/ExternalSale?UID=${shift8Credentials.storeUuid}&LocationNumber=${shift8Credentials.storeLocationNumber}`;
 
     console.log("xxx...url", url);
 
@@ -31,7 +53,7 @@ const createOrder = async (order) => {
         method: "post",
         url: url,
         headers: headers,
-        data: order,
+        data: shift8Order,
     });
 
     console.log("xxx...result.data", result.data);
@@ -39,7 +61,7 @@ const createOrder = async (order) => {
     return result.data;
 };
 
-const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, mappingData, tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     const getSaleText = (tabinOrder) => {
         let saleText = `Order: ${tabinOrder.number}\n`;
 
@@ -50,10 +72,10 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         return saleText;
     };
 
-    const getShift8Items = (mappingData, tabinOrder) => {
+    const getShift8Items = (mappingData, tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         let sno = 0;
 
-        const shift8Items = [];
+        const shift8Items: IShift8Item[] = [];
 
         tabinOrder.products.forEach((product) => {
             const productTotalRounded = convertCentsToDollarsReturnFloat(product.price);
@@ -61,7 +83,7 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             const productTotalTaxRounded = convertCentsToDollarsReturnFloat(productTotalTax);
             const productTotalExTaxRounded = convertCentsToDollarsReturnFloat(product.price - productTotalTax);
 
-            let shift8Item = {
+            let shift8Item: IShift8Item = {
                 ItemID: sno,
                 ItemPLU: parseInt(mappingData[product.id]),
                 ItemName: product.name,
@@ -80,7 +102,7 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                     const modifierTotalTaxRounded = convertCentsToDollarsReturnFloat(modifierTotalTax);
                     const modifierTotalExTaxRounded = convertCentsToDollarsReturnFloat(modifier.price - modifierTotalTax);
 
-                    let shift8Mod = {
+                    const shift8Mod: IShift8Mod = {
                         ModPLU: parseInt(mappingData[modifier.id]),
                         ModName: modifier.name,
                         ModIncTax: modifierTotalRounded,
@@ -107,7 +129,7 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                                     productModifierGroupModifier.price - productModifierGroupModifierTotalTax
                                 );
 
-                                let shift8ItemMod = {
+                                const shift8ItemMod: IShift8Mod = {
                                     ModPLU: parseInt(mappingData[productModifierGroupModifier.id]),
                                     ModName: productModifierGroupModifier.name,
                                     ModIncTax: productModifierGroupModifierTotalRounded,
@@ -148,15 +170,15 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         SaleTotalExTax: tabinOrderTotalExTaxRounded,
         SaleDate: tabinOrder.placedAt,
         FulfillmentDate: tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt,
-        LocationNumber: shift8StoreLocationNumber,
+        LocationNumber: shift8Credentials.storeLocationNumber,
         ReceiptNumber: Math.round(new Date().getTime() / 1000), //secs since epoch
         SaleText: getSaleText(tabinOrder),
         OrderTypeID: tabinOrder.type == "TAKEAWAY" ? 2 : 1,
         OrderNotes: tabinOrder.notes || "",
         Items: getShift8Items(mappingData, tabinOrder),
         PaymentMedia: {
-            PaymentTypeNumber: shift8Config.payment_type_number,
-            PaymentMediaName: shift8Config.payment_media_name,
+            PaymentTypeNumber: process.env.SHIFT8_PAYMENT_TYPE_NUMBER,
+            PaymentMediaName: process.env.SHIFT8_PAYMENT_MEDIA_NAME,
             PaymentAmount: tabinOrderTotalRounded,
             PaymentReferenceNumber: tabinOrder.id,
         },
@@ -166,7 +188,7 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             Phone: tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : "TABIN PN",
             Email: tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : "TABIN E",
         },
-        ResponseURL: `${shift8Config.response_url}/${tabinOrder.id}`,
+        ResponseURL: `${process.env.SHIFT8_RESPONSE_URL}/${tabinOrder.id}`,
     };
 
     console.log("xxx...shift8Sale", JSON.stringify(shift8Sale));
@@ -174,32 +196,26 @@ const convertShift8Order = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     return shift8Sale;
 };
 
-const createShift8Order = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-    const apiConfigSecretId = "prod/shift8/api_config";
-    const apiTokenSecretId = "prod/shift8/api_token";
+const createShift8Order = async (shift8Credentials: IThirdPartyIntegrationsShift8, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const apiConfigSecretId = process.env.SHIFT8_API_CONFIG_SECRET_ID;
+    const apiTokenSecretId = process.env.SHIFT8_API_TOKEN_SECRET_ID;
 
     console.log("xxx...event", event);
 
-    const shift8StoreApiUrl = event.shift8StoreApiUrl;
-    const shift8StoreUuid = event.shift8StoreUuid;
-    const shift8StoreLocationNumber = event.shift8StoreLocationNumber;
-    const newOrder = event.order;
-
-    let shift8Config = {};
-    let accessToken = "";
-
     const getSecrets = async () => {
         const shift8ApiConfig = await secretManager.getSecretValue({ SecretId: apiConfigSecretId }).promise();
-        shift8Config = JSON.parse(shift8ApiConfig.SecretString);
+        const shift8Config = JSON.parse(shift8ApiConfig.SecretString);
 
         const shift8ApiTokens = await secretManager.getSecretValue({ SecretId: apiTokenSecretId }).promise();
-        accessToken = JSON.parse(shift8ApiTokens.SecretString).shift8_access_token;
+        const accessToken = JSON.parse(shift8ApiTokens.SecretString).shift8_access_token;
 
         console.log("xxx...shift8Config", shift8Config);
         console.log("xxx...shift8ApiTokens", shift8ApiTokens);
+
+        return { shift8Config, accessToken };
     };
 
-    const getIntegrationMappingData = async (restaurantId) => {
+    const getIntegrationMappingData = async (restaurantId: string) => {
         const queryParams = {
             TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
             Limit: 10000,
@@ -217,9 +233,7 @@ const createShift8Order = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
 
         const data = await ddb.query(queryParams).promise();
 
-        if (data.Items.length == 0) {
-            throw `No mapping data found for id, ${restaurantId}`;
-        }
+        if (data.Items.length == 0) throw `No mapping data found for id, ${restaurantId}`;
 
         const mappingData = {};
 
@@ -230,11 +244,11 @@ const createShift8Order = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         return mappingData;
     };
 
-    await getSecrets();
-    const mappingData = await getIntegrationMappingData(newOrder.orderRestaurantId);
+    const secrets = await getSecrets();
+    const mappingData = await getIntegrationMappingData(order.orderRestaurantId);
 
-    const convertedData = convertShift8Order(order);
-    const result = await createOrder(convertedData);
+    const shift8Order = convertShift8Order(shift8Credentials, mappingData, order);
+    const result = await createOrder(shift8Credentials, secrets.accessToken, shift8Order);
 
     if (!result.isRequestSuccessful) {
         return result.responseMessage;

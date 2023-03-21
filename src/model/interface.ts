@@ -35,7 +35,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     total: number;
     discount?: number | null;
     promotionId?: string | null;
-    subTotal?: number;
+    subTotal: number;
     paid: boolean;
     paymentAmounts?: IOrderPaymentAmounts | null;
     payments?: IPayment[];
@@ -215,110 +215,7 @@ export interface IModifier {
     price: number;
 }
 
-export interface IOrderPaymentAmounts {
-    cash: number;
-    eftpos: number;
-    online: number;
-    uberEats: number;
-    menulog: number;
-}
-
-export interface IS3Object {
-    key: string;
-    bucket: string;
-    region: string;
-    identityPoolId: string;
-}
-
-export interface IPayment {
-    type: string;
-    amount: number;
-}
-
-export interface IGET_RESTAURANT_ORDER_FRAGMENT {
-    id: string;
-    placedAt?: string;
-    placedAtUtc?: string | null;
-    parkedAt?: string | null;
-    updatedAt?: string | null;
-    completedAt?: string | null;
-    completedAtUtc?: string | null;
-    createdAt?: string | null;
-    cancelledAtUtc?: string | null;
-    cancelledAt?: string | null;
-    refundedAt?: string | null;
-    notes?: string | null;
-    eftposReceipt?: string | null;
-    total: number;
-    discount?: number | null;
-    promotionId?: string | null;
-    subTotal?: number;
-    paid: boolean;
-    paymentAmounts?: IOrderPaymentAmounts | null;
-    payments?: IPayment[];
-    stripePaymentId?: string | null;
-    onlineOrder?: boolean | null;
-    guestCheckout?: boolean | null;
-    orderScheduledAt?: string | null;
-    customerInformation?: {
-        firstName?: string | null;
-        email?: string | null;
-        phoneNumber?: string | null;
-    } | null;
-    status: "NEW" | "COMPLETED" | "CANCELLED" | "PARKED" | "REFUNDED";
-    "status#placedAt"?: string;
-    type: "DINEIN" | "TAKEAWAY" | "DELIVERY";
-    number: string;
-    orderRestaurantId: string;
-    orderUserId: string;
-    owner?: string;
-    table?: string | null;
-    buzzer?: string | null;
-    registerId?: string;
-    products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
-    __typename: string;
-}
-
-export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
-    totalPrice?: number;
-    discount?: number;
-    quantity: number;
-    notes?: string | null;
-    image?: IS3Object | null;
-    category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
-    modifierGroups?: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
-    id: string;
-    name: string;
-    image?: IS3Object | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
-    id: string;
-    name: string;
-    choiceDuplicate: number;
-    choiceMin: number;
-    choiceMax: number;
-    collapsedByDefault?: boolean;
-    hideForCustomer?: boolean | null;
-    modifiers?: IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT[];
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
-    preSelectedQuantity?: number | null;
-    quantity: number;
-    productModifiers?: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
-    image?: IS3Object | null;
-}
-export interface IDOSHIORDER {
+export interface IDOSHII_ORDER {
     externalOrderRef: string;
     manuallyProcessed: boolean | false;
     status: string;
@@ -329,7 +226,7 @@ export interface IDOSHIORDER {
     items: Array<IDOSHIITEMS>;
     surcounts: Array<IDOSHIITEMSSURCOUNTS>;
     taxes: Array<IDOSHIITEMSTAXES>;
-    log: IDOSHILOG;
+    log: IDOSHII_LOG;
 }
 
 export interface IDOSHIITEMS {
@@ -386,7 +283,7 @@ export interface IDOSHIITEMSTAXES {
     value: string;
 }
 
-export interface IDOSHILOG {
+export interface IDOSHII_LOG {
     employeePosRef: string;
     employeeName: string;
     deviceRef: string;
@@ -394,7 +291,7 @@ export interface IDOSHILOG {
     area: string;
 }
 
-export interface IDOSHICONSUMER {
+export interface IDOSHII_CONSUMER {
     name: string;
     email: string;
     phone: string;
@@ -409,7 +306,7 @@ export interface IDOSHICONSUMER {
     };
 }
 
-export interface IDOSHITRANSACTIONS {
+export interface IDOSHII_TRANSACTIONS {
     amount: number;
     reference: string;
     invoice: string;
@@ -420,10 +317,10 @@ export interface IDOSHITRANSACTIONS {
     surcounts: Array<IDOSHIITEMSSURCOUNTS>;
 }
 
-export interface IDOSHIORDERFINALDATA {
-    order: IDOSHIORDER;
-    consumer: IDOSHICONSUMER;
-    transactions: Array<IDOSHITRANSACTIONS>;
+export interface IDOSHII_ORDER_FINAL_DATA {
+    order: IDOSHII_ORDER;
+    consumer: IDOSHII_CONSUMER;
+    transactions: Array<IDOSHII_TRANSACTIONS>;
     members: [];
 }
 
@@ -453,4 +350,10 @@ export interface IThirdPartyIntegrationsDoshii {
     clientId: string;
     clientSecret: string;
     locationId: string;
+}
+
+export enum EIntegrationType {
+    SHIFT8 = "SHIFT8",
+    WIZBANG = "WIZBANG",
+    DOSHII = "DOSHII",
 }

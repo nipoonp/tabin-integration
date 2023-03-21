@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { ITABIN_ITEMS } from "../../model/interface";
+import { EIntegrationType, ITABIN_ITEMS } from "../../model/interface";
 
 var AWS = require("aws-sdk");
 
@@ -7,7 +7,7 @@ AWS.config.update({ region: process.env.REGION });
 
 var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
 
-const createTabinItems = async (tabinItems: ITABIN_ITEMS, restaurantId: string, restaurantManagerId: string) => {
+const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EIntegrationType, restaurantId: string, restaurantManagerId: string) => {
     const { categories, products, categoryProductLinks, modifierGroups, productModifierGroupLinks, modifierGroupModifierLinks, modifiers } =
         tabinItems;
 
@@ -107,12 +107,6 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, restaurantId: string, 
     for (var i = 0; i < categoryProductLinks.length; i++) {
         const categoryProductLink = categoryProductLinks[i];
 
-        console.log("xxx...", {
-            categoryProductLink,
-            categoryId: categoryIds[categoryProductLink.categoryId],
-            productId: productIds[categoryProductLink.productId],
-        });
-
         const uuid = uuidv4();
         const params = {
             TableName: process.env.CATEGORY_PRODUCT_LINK_TABLE_NAME,
@@ -160,6 +154,43 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, restaurantId: string, 
                 modifierGroupModifierLinkModifierGroupId: modifierGroupIds[modifierGroupModifierLink.modifierGroupId],
                 modifierGroupModifierLinkModifierId: modifierIds[modifierGroupModifierLink.modifierId],
                 modifierGroupModifierLinkRestaurantId: restaurantId,
+                owner: restaurantManagerId,
+            },
+        };
+
+        await ddb.put(params).promise();
+    }
+
+    // Integration Mapping
+    for (var i = 0; i < products.length; i++) {
+        const product = products[i];
+
+        const params = {
+            TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
+            Item: {
+                id: `${productIds[product.productId]}_${integrationType}`,
+                itemId: productIds[product.productId],
+                externalItemId: product.productId,
+                integrationType: integrationType,
+                integrationMappingRestaurantId: restaurantId,
+                owner: restaurantManagerId,
+            },
+        };
+
+        await ddb.put(params).promise();
+    }
+
+    for (var i = 0; i < modifiers.length; i++) {
+        const modifier = modifiers[i];
+
+        const params = {
+            TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
+            Item: {
+                id: `${modifierIds[modifier.modifierId]}_${integrationType}`,
+                itemId: modifierIds[modifier.modifierId],
+                externalItemId: modifier.modifierId,
+                integrationType: integrationType,
+                integrationMappingRestaurantId: restaurantId,
                 owner: restaurantManagerId,
             },
         };

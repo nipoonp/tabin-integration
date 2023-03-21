@@ -1,6 +1,7 @@
 import {
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IORDERLINE_MODIFIERS,
+    IThirdPartyIntegrationsWizBang,
     IWIZBANG_ORDER,
     IWIZBANG_ORDER_CUSTOMER,
     IWIZBANG_ORDER_ORDERLINES,
@@ -38,10 +39,10 @@ const convertedData: IWIZBANG_ORDER = {
     TENDER: [],
 };
 
-const createOrder = (data: IWIZBANG_ORDER) => {
+const createOrder = (wizBangCredentials: IThirdPartyIntegrationsWizBang, data: IWIZBANG_ORDER) => {
     let requestedData = JSON.stringify(data);
-    let username = "admin";
-    let password = "admin";
+    let username = wizBangCredentials.username;
+    let password = wizBangCredentials.password;
     let encodedBase64Token = Buffer.from(`${username}:${password}`).toString("base64");
     let authorization = `Basic ${encodedBase64Token}`;
     authorization = authorization.replace(/[\r\n]+/gm, "");
@@ -51,22 +52,21 @@ const createOrder = (data: IWIZBANG_ORDER) => {
         "Content-Type": "application/x-www-form-urlencoded",
         Authorization: authorization,
     };
-    return new Promise(function (resolve, reject) {
-        axios({
-            method: "post",
-            url: "http://203.109.232.106:5585/wizbang/restapi/service/order",
-            headers: headers,
-            data: requestedData,
-        })
-            .then(async (result: any) => {
-                if (result.data) {
-                    resolve(result.data);
-                }
-            })
-            .catch((err: any) => {
-                console.log(err);
-                reject(err);
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            const result: any = await axios({
+                method: "post",
+                url: `${wizBangCredentials.storeApiUrl}wizbang/restapi/service/order`,
+                headers: headers,
+                data: requestedData,
             });
+
+            if (result.data) resolve(result.data);
+        } catch (e) {
+            console.error(e);
+            reject(e);
+        }
     });
 };
 
@@ -116,9 +116,9 @@ const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     return convertedData;
 };
 
-const createWizBangOrder = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const createWizBangOrder = async (wizBangCredentials: IThirdPartyIntegrationsWizBang, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     const convertedData = convertWizBangOrder(order);
-    const result = await createOrder(convertedData);
+    const result = await createOrder(wizBangCredentials, convertedData);
 
     return result;
 };

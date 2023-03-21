@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
 
-import { ITABIN_ITEMS } from "../model/interface";
+import { EIntegrationType, ITABIN_ITEMS } from "../model/interface";
 import { createTabinItems } from "../services/importMenu/createTabinItems";
 import { convertDoshiiMenu } from "../services/importMenu/doshiiMenu";
 import { convertWizBangMenu } from "../services/importMenu/wizBangMenu";
@@ -12,6 +12,8 @@ export const handler = async (event, context, callback) => {
 
     const input = event.arguments.input;
     const restaurantId = input.restaurantId;
+
+    let integrationType: EIntegrationType = EIntegrationType.SHIFT8;
 
     const getRestaurantData = async (restaurantId) => {
         const queryParams = {
@@ -48,15 +50,17 @@ export const handler = async (event, context, callback) => {
 
         if (restaurant.thirdPartyIntegrations?.wizBang?.enable === true) {
             tabinItems = await convertWizBangMenu(restaurant.thirdPartyIntegrations.wizBang);
+            integrationType = EIntegrationType.WIZBANG;
         }
 
         if (restaurant.thirdPartyIntegrations?.doshii?.enable === true) {
             tabinItems = await convertDoshiiMenu(restaurant.thirdPartyIntegrations.doshii);
+            integrationType = EIntegrationType.DOSHII;
         }
 
         console.log("xxx...tabinItems", tabinItems);
 
-        if (tabinItems) await createTabinItems(tabinItems, restaurant.id, restaurant.restaurantManagerId);
+        if (tabinItems) await createTabinItems(tabinItems, integrationType, restaurant.id, restaurant.restaurantManagerId);
 
         return callback(null, { restaurantId: restaurantId });
     } catch (e) {

@@ -31,7 +31,7 @@ const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
 
             const result: any = await axios({
                 method: "get",
-                url: `https://sandbox.doshii.co/partner/v3/locations/${doshiiCredentials.locationId}/menu`,
+                url: `${process.env.DOSHII_API_BASE_URL}partner/v3/locations/${doshiiCredentials.locationId}/menu`,
                 headers: headers,
             });
 
