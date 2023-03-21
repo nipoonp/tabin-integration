@@ -1,4 +1,4 @@
-import { IGET_RESTAURANT_ORDER_FRAGMENT, IThirdPartyIntegrationsShift8 } from "../../Model/Interface";
+import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../Model/Interface";
 
 const axios = require("axios");
 const AWS = require("aws-sdk");
@@ -196,7 +196,11 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
     return shift8Sale;
 };
 
-const createShift8Order = async (shift8Credentials: IThirdPartyIntegrationsShift8, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const createShift8Order = async (
+    order: IGET_RESTAURANT_ORDER_FRAGMENT,
+    shift8Credentials: IThirdPartyIntegrationsShift8,
+    integrationMappings: IINTEGRATION_MAPPINGS
+) => {
     const apiConfigSecretId = process.env.SHIFT8_API_CONFIG_SECRET_ID;
     const apiTokenSecretId = process.env.SHIFT8_API_TOKEN_SECRET_ID;
 

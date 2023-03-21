@@ -357,3 +357,7 @@ export enum EIntegrationType {
     WIZBANG = "WIZBANG",
     DOSHII = "DOSHII",
 }
+
+export interface IINTEGRATION_MAPPINGS {
+    [key: string]: { id: string; itemId: string; externalItemId: string; integrationType: string };
+}

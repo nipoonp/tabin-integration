@@ -1,4 +1,7 @@
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../Model/Interface";
+const AWS = require("aws-sdk");
+var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
+
+import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS } from "../Model/Interface";
 import { createDoshiiOrder } from "../services/createOrder/doshiiOrder";
 import { createShift8Order } from "../services/createOrder/shift8Order";
 import { createWizBangOrder } from "../services/createOrder/wizBangOrder";
@@ -10,19 +13,50 @@ export const handler = async (event, context, callback) => {
     const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = event.order;
     const thirdPartyIntegrations = event.thirdPartyIntegrations;
 
+    const getIntegrationMappingData = async (restaurantId: string) => {
+        const queryParams = {
+            TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
+            Limit: 1000000,
+            IndexName: "byRestaurantIdByIntegrationType",
+            KeyConditionExpression: "#integrationMappingRestaurantId = :integrationMappingRestaurantId",
+            ExpressionAttributeNames: {
+                "#integrationMappingRestaurantId": "integrationMappingRestaurantId",
+            },
+            ExpressionAttributeValues: {
+                ":integrationMappingRestaurantId": restaurantId,
+            },
+        };
+
+        const data = await ddb.query(queryParams).promise();
+
+        if (data.Items.length === 0) throw `No integration mapping data found for id, ${restaurantId}`;
+
+        const mappings: IINTEGRATION_MAPPINGS = {};
+
+        data.Items.forEach((mapping) => {
+            mappings[mapping.id] = mapping;
+        });
+
+        return mappings;
+    };
+
     try {
+        const integrationMappings: IINTEGRATION_MAPPINGS = await getIntegrationMappingData(newOrder.orderRestaurantId);
+
+        console.log("xxx...integrationMappings", integrationMappings);
+
         let result;
 
         if (thirdPartyIntegrations?.shift8?.enable === true) {
-            result = await createShift8Order(thirdPartyIntegrations.shift8, newOrder);
+            result = await createShift8Order(newOrder, thirdPartyIntegrations.shift8, integrationMappings);
         }
 
         if (thirdPartyIntegrations?.wizBang?.enable === true) {
-            result = await createWizBangOrder(thirdPartyIntegrations.wizBang, newOrder);
+            result = await createWizBangOrder(newOrder, thirdPartyIntegrations.wizBang, integrationMappings);
         }
 
         if (thirdPartyIntegrations?.doshii?.enable === true) {
-            result = await createDoshiiOrder(thirdPartyIntegrations.doshii, newOrder);
+            result = await createDoshiiOrder(newOrder, thirdPartyIntegrations.doshii, integrationMappings);
         }
 
         console.log("xxx...result", result);

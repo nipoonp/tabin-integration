@@ -15,7 +15,7 @@ export const handler = async (event, context, callback) => {
 
     let integrationType: EIntegrationType = EIntegrationType.SHIFT8;
 
-    const getRestaurantData = async (restaurantId) => {
+    const getRestaurantData = async (restaurantId: string) => {
         const queryParams = {
             TableName: process.env.RESTAURANT_TABLE_NAME,
             Limit: 1,

@@ -9,6 +9,8 @@ import {
     IDOSHIITEMSTAXES,
     IDOSHII_LOG,
     IDOSHII_TRANSACTIONS,
+    IINTEGRATION_MAPPINGS,
+    EIntegrationType,
 } from "../../model/interface";
 
 import axios from "axios";
@@ -92,7 +94,7 @@ const createOrder = (doshiiCredentials: IThirdPartyIntegrationsDoshii, converted
     });
 };
 
-const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrationMappings: IINTEGRATION_MAPPINGS) => {
     order.externalOrderRef = tabinOrder.id;
     // order.status = tabinOrder.status; // Status is mandotory with "pending" Value
     order.type = tabinOrder.type == "TAKEAWAY" ? "pickup" : "dinein";
@@ -122,17 +124,20 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             taxType: "inclusive",
             value: item.price.toString(),
         };
-        items.posId = item.id;
+
+        items.posId = integrationMappings[`${item.id}_${EIntegrationType.DOSHII}`].externalItemId;
         items.name = item.name;
         items.quantity = item.quantity;
         items.description = item.name;
         items.unitPrice = item.price.toString();
         items.totalAfterSurcounts = item.price.toString();
         items.totalBeforeSurcounts = item.price.toString();
+
         if (item.category?.name) {
             let categoryName = item.category?.name;
             items.tags.push(categoryName);
         }
+
         if (item.modifierGroups) {
             for (let innerItem of item.modifierGroups) {
                 let options: IDOSHIITEMSOPTIONS = {
@@ -140,8 +145,10 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                     name: "",
                     variants: [],
                 };
-                options.posId = innerItem.id;
+
+                options.posId = integrationMappings[`${innerItem.id}_${EIntegrationType.DOSHII}`].externalItemId;
                 options.name = innerItem.name;
+
                 if (innerItem.modifiers) {
                     for (let childInner of innerItem.modifiers) {
                         let variants: IDOSHIITEMSOPTIONSVARIANTS = {
@@ -149,12 +156,14 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                             name: "",
                             price: "",
                         };
-                        variants.posId = childInner.id;
+
+                        variants.posId = integrationMappings[`${childInner.id}_${EIntegrationType.DOSHII}`].externalItemId;
                         variants.name = childInner.name;
                         variants.price = childInner.price.toString();
                         options.variants.push(variants);
                     }
                 }
+
                 items.options.push(options);
             }
         }
@@ -166,13 +175,16 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             taxType: "inclusive",
             value: items.unitPrice,
         };
+
         items.taxes.push(itemTaxes);
         order.items.push(items);
         order.taxes.push(orderTaxes);
     }
+
     convertedData.consumer.name = tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : consumer.name;
     convertedData.consumer.email = tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : consumer.email;
     convertedData.consumer.phone = tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : consumer.phone;
+
     let transactions: IDOSHII_TRANSACTIONS = {
         amount: tabinOrder.payments && tabinOrder.payments.length > 0 ? tabinOrder.payments[0].amount : 0,
         reference: "",
@@ -188,13 +200,18 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         prepaid: true,
         surcounts: [],
     };
+
     convertedData.transactions.push(transactions);
 
     return convertedData;
 };
 
-const createDoshiiOrder = async (doshiiCredentials: IThirdPartyIntegrationsDoshii, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-    const convertedData = convertDoshiiOrder(order);
+const createDoshiiOrder = async (
+    order: IGET_RESTAURANT_ORDER_FRAGMENT,
+    doshiiCredentials: IThirdPartyIntegrationsDoshii,
+    integrationMappings: IINTEGRATION_MAPPINGS
+) => {
+    const convertedData = convertDoshiiOrder(order, integrationMappings);
     const result = await createOrder(doshiiCredentials, convertedData);
 
     return result;

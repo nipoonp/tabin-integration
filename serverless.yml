@@ -55,5 +55,6 @@ functions:
             SHIFT8_API_TOKEN_SECRET_ID: "prod/shift8/api_token"
             SHIFT8_PAYMENT_TYPE_NUMBER: "9972"
             SHIFT8_PAYMENT_MEDIA_NAME: "Kiosk Payment"
+            INTEGRATION_MAPPING_TABLE_NAME: "IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
             SHIFT8_RESPONSE_URL: "https://yez941zubk.execute-api.ap-southeast-2.amazonaws.com/prod/order-response"
             DOSHII_API_BASE_URL: "https://sandbox.doshii.co/"

@@ -1,5 +1,7 @@
 import {
+    EIntegrationType,
     IGET_RESTAURANT_ORDER_FRAGMENT,
+    IINTEGRATION_MAPPINGS,
     IORDERLINE_MODIFIERS,
     IThirdPartyIntegrationsWizBang,
     IWIZBANG_ORDER,
@@ -70,7 +72,7 @@ const createOrder = (wizBangCredentials: IThirdPartyIntegrationsWizBang, data: I
     });
 };
 
-const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrationMappings: IINTEGRATION_MAPPINGS) => {
     // console.log("item", tabinOrder);
     convertedData.TABLENAME = tabinOrder.table ? tabinOrder.table : "";
     convertedData.ACCOUNTID = 1;
@@ -88,11 +90,13 @@ const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             SALESTAXPERCENT: null,
             ORDERLINEMODIFIERS: [],
         };
+
+        orderlines.ITEMID = parseInt(integrationMappings[`${item.id}_${EIntegrationType.WIZBANG}`].externalItemId);
         orderlines.QTY = item.quantity ? item.quantity : null;
         orderlines.USEUNITPRICE = true;
         orderlines.ITEMABBREV = item.name ? item.name : "";
         orderlines.UNITPRICE = item.price ? item.price : null;
-        orderlines.ITEMID = 1;
+
         if (item.modifierGroups) {
             for (let innerItem of item.modifierGroups) {
                 if (innerItem.modifiers) {
@@ -102,6 +106,7 @@ const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                             USEMODPRICE: false,
                             MODPRICE: 0,
                         };
+
                         modifiers.MODIFIER = childInner.name ? childInner.name : "";
                         modifiers.MODPRICE = childInner.price ? childInner.price : 0;
                         modifiers.USEMODPRICE = true;
@@ -116,8 +121,12 @@ const convertWizBangOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
     return convertedData;
 };
 
-const createWizBangOrder = async (wizBangCredentials: IThirdPartyIntegrationsWizBang, order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-    const convertedData = convertWizBangOrder(order);
+const createWizBangOrder = async (
+    order: IGET_RESTAURANT_ORDER_FRAGMENT,
+    wizBangCredentials: IThirdPartyIntegrationsWizBang,
+    integrationMappings: IINTEGRATION_MAPPINGS
+) => {
+    const convertedData = convertWizBangOrder(order, integrationMappings);
     const result = await createOrder(wizBangCredentials, convertedData);
 
     return result;
