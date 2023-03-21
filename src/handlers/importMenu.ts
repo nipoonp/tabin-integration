@@ -42,6 +42,8 @@ export const handler = async (event, context, callback) => {
         console.log("xxx...restaurant", restaurant);
         console.log("xxx...restaurant.thirdPartyIntegrations", restaurant.thirdPartyIntegrations);
 
+        if (!restaurant.thirdPartyIntegrations?.enable) throw "Please enable third party integrations";
+
         let tabinItems: ITABIN_ITEMS | null = null;
 
         if (restaurant.thirdPartyIntegrations?.shift8?.enable === true) {

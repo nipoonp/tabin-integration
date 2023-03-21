@@ -35,6 +35,9 @@ const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
                 headers: headers,
             });
 
+            console.log("xxx...url", `${process.env.DOSHII_API_BASE_URL}partner/v3/locations/${doshiiCredentials.locationId}/menu`);
+            console.log("xxx...result: ", result);
+
             if (result.data) resolve(result.data);
         } catch (e) {
             reject(e);

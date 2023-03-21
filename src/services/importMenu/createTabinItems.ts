@@ -180,6 +180,24 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
         await ddb.put(params).promise();
     }
 
+    for (var i = 0; i < modifierGroups.length; i++) {
+        const modifierGroup = modifierGroups[i];
+
+        const params = {
+            TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
+            Item: {
+                id: `${modifierGroupIds[modifierGroup.modifierGroupId]}_${integrationType}`,
+                itemId: modifierGroupIds[modifierGroup.modifierGroupId],
+                externalItemId: modifierGroup.modifierGroupId,
+                integrationType: integrationType,
+                integrationMappingRestaurantId: restaurantId,
+                owner: restaurantManagerId,
+            },
+        };
+
+        await ddb.put(params).promise();
+    }
+
     for (var i = 0; i < modifiers.length; i++) {
         const modifier = modifiers[i];
 
