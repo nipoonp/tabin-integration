@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
 
-import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS } from "../Model/Interface";
+import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS } from "../model/interface";
 import { createDoshiiOrder } from "../services/createOrder/doshiiOrder";
 import { createShift8Order } from "../services/createOrder/shift8Order";
 import { createWizBangOrder } from "../services/createOrder/wizBangOrder";
@@ -59,7 +59,7 @@ export const handler = async (event, context, callback) => {
             result = await createDoshiiOrder(newOrder, thirdPartyIntegrations.doshii, integrationMappings);
         }
 
-        console.log("xxx...result", result);
+        console.log("xxx...result", JSON.stringify(result));
 
         return callback(null, { orderId: newOrder.id });
     } catch (e) {

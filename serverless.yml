@@ -17,9 +17,13 @@ provider:
                 - Effect: "Allow"
                   Action:
                       - "dynamodb:Query"
-                      - "dynamodb:PutItem"
                   Resource:
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Restaurant-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev/index/byRestaurantIdByIntegrationType"
+                - Effect: "Allow"
+                  Action:
+                      - "dynamodb:PutItem"
+                  Resource:
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Category-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Product-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroup-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
@@ -27,7 +31,6 @@ provider:
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/CategoryProductLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ProductModifierGroupLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroupModifierLink-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
-                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
 
 functions:
     import-menu:

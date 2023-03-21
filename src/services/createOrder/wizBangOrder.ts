@@ -7,7 +7,7 @@ import {
     IWIZBANG_ORDER,
     IWIZBANG_ORDER_CUSTOMER,
     IWIZBANG_ORDER_ORDERLINES,
-} from "../../Model/Interface";
+} from "../../model/interface";
 
 import axios from "axios";
 

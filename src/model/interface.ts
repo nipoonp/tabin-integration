@@ -20,8 +20,8 @@ export interface IPayment {
 
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
-    placedAt?: string;
-    placedAtUtc?: string | null;
+    placedAt: string;
+    placedAtUtc: string | null;
     parkedAt?: string | null;
     updatedAt?: string | null;
     completedAt?: string | null;
@@ -49,7 +49,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
         phoneNumber?: string | null;
     } | null;
     status: "NEW" | "COMPLETED" | "CANCELLED" | "PARKED" | "REFUNDED";
-    "status#placedAt"?: string;
+    "status#placedAt": string;
     type: "DINEIN" | "TAKEAWAY" | "DELIVERY";
     number: string;
     orderRestaurantId: string;
@@ -223,13 +223,13 @@ export interface IDOSHII_ORDER {
     notes: string;
     requiredAt: string;
     availableEta: string;
-    items: Array<IDOSHIITEMS>;
+    items: Array<IDOSHII_ITEMS>;
     surcounts: Array<IDOSHIITEMSSURCOUNTS>;
-    taxes: Array<IDOSHIITEMSTAXES>;
+    taxes: Array<IDOSHII_ITEMS_TAXES>;
     log: IDOSHII_LOG;
 }
 
-export interface IDOSHIITEMS {
+export interface IDOSHII_ITEMS {
     posId: string;
     name: string;
     quantity: number;
@@ -241,8 +241,8 @@ export interface IDOSHIITEMS {
     type: string;
     // includedItems: Array<IDOSHIITEMSINCLUDES>;
     surcounts: Array<IDOSHIITEMSSURCOUNTS>;
-    taxes: Array<IDOSHIITEMSTAXES>;
-    options: Array<IDOSHIITEMSOPTIONS>;
+    taxes: Array<IDOSHII_ITEMS_TAXES>;
+    options: Array<IDOSHII_ITEMS_OPTIONS>;
 }
 
 export interface IDOSHIITEMSINCLUDES {
@@ -250,16 +250,16 @@ export interface IDOSHIITEMSINCLUDES {
     posId: string;
     quantity: number;
     unitPrice: string;
-    options: Array<IDOSHIITEMSOPTIONS>;
+    options: Array<IDOSHII_ITEMS_OPTIONS>;
 }
 
-export interface IDOSHIITEMSOPTIONS {
+export interface IDOSHII_ITEMS_OPTIONS {
     posId: string;
     name: string;
-    variants: Array<IDOSHIITEMSOPTIONSVARIANTS>;
+    variants: Array<IDOSHII_ITEMS_OPTIONS_VARIANTS>;
 }
 
-export interface IDOSHIITEMSOPTIONSVARIANTS {
+export interface IDOSHII_ITEMS_OPTIONS_VARIANTS {
     posId: string;
     name: string;
     price: string;
@@ -274,7 +274,7 @@ export interface IDOSHIITEMSSURCOUNTS {
     value: string;
 }
 
-export interface IDOSHIITEMSTAXES {
+export interface IDOSHII_ITEMS_TAXES {
     posId: string;
     name: string;
     amount: string;

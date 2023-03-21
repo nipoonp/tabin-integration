@@ -2,19 +2,19 @@ import {
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IDOSHII_ORDER_FINAL_DATA,
     IDOSHII_ORDER,
-    IDOSHIITEMS,
-    IDOSHIITEMSOPTIONS,
-    IDOSHIITEMSOPTIONSVARIANTS,
+    IDOSHII_ITEMS,
+    IDOSHII_ITEMS_OPTIONS,
+    IDOSHII_ITEMS_OPTIONS_VARIANTS,
     IDOSHII_CONSUMER,
-    IDOSHIITEMSTAXES,
+    IDOSHII_ITEMS_TAXES,
     IDOSHII_LOG,
     IDOSHII_TRANSACTIONS,
     IINTEGRATION_MAPPINGS,
     EIntegrationType,
+    IThirdPartyIntegrationsDoshii,
 } from "../../model/interface";
 
 import axios from "axios";
-import { IThirdPartyIntegrationsDoshii } from "../../Model/Interface";
 
 import { sign } from "jsonwebtoken";
 
@@ -42,11 +42,11 @@ let log: IDOSHII_LOG = {
 };
 
 let order: IDOSHII_ORDER = {
-    externalOrderRef: "Tabin Order ID",
+    externalOrderRef: "",
     manuallyProcessed: false,
     status: "pending",
     type: "",
-    notes: "Tabin Note",
+    notes: "",
     requiredAt: "",
     availableEta: "",
     items: [],
@@ -98,10 +98,12 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
     order.externalOrderRef = tabinOrder.id;
     // order.status = tabinOrder.status; // Status is mandotory with "pending" Value
     order.type = tabinOrder.type == "TAKEAWAY" ? "pickup" : "dinein";
-    order.requiredAt = tabinOrder.placedAt ? tabinOrder.placedAt : "";
-    order.availableEta = tabinOrder.completedAt ? tabinOrder.completedAt : "";
-    for (let item of tabinOrder.products) {
-        let items: IDOSHIITEMS = {
+    order.requiredAt = tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt;
+    order.availableEta = tabinOrder.orderScheduledAt ? tabinOrder.orderScheduledAt : tabinOrder.placedAt;
+    order.notes = tabinOrder.notes || "TABIN ORDER";
+
+    for (let product of tabinOrder.products) {
+        let items: IDOSHII_ITEMS = {
             posId: "",
             name: "",
             quantity: 0,
@@ -116,58 +118,61 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
             taxes: [],
             options: [],
         };
-        let orderTaxes: IDOSHIITEMSTAXES = {
-            posId: item.id,
-            name: item.name,
+        let orderTaxes: IDOSHII_ITEMS_TAXES = {
+            posId: product.id,
+            name: product.name,
             amount: "15",
             type: "percentage",
             taxType: "inclusive",
-            value: item.price.toString(),
+            value: product.price.toString(),
         };
 
-        items.posId = integrationMappings[`${item.id}_${EIntegrationType.DOSHII}`].externalItemId;
-        items.name = item.name;
-        items.quantity = item.quantity;
-        items.description = item.name;
-        items.unitPrice = item.price.toString();
-        items.totalAfterSurcounts = item.price.toString();
-        items.totalBeforeSurcounts = item.price.toString();
+        items.posId = integrationMappings[`${product.id}_${EIntegrationType.DOSHII}`].externalItemId;
+        items.name = product.name;
+        items.quantity = product.quantity;
+        items.description = product.name;
+        items.unitPrice = product.price.toString();
+        items.totalAfterSurcounts = product.price.toString();
+        items.totalBeforeSurcounts = product.price.toString();
 
-        if (item.category?.name) {
-            let categoryName = item.category?.name;
+        if (product.category?.name) {
+            let categoryName = product.category?.name;
             items.tags.push(categoryName);
         }
 
-        if (item.modifierGroups) {
-            for (let innerItem of item.modifierGroups) {
-                let options: IDOSHIITEMSOPTIONS = {
+        if (product.modifierGroups) {
+            for (let modifierGroup of product.modifierGroups) {
+                let options: IDOSHII_ITEMS_OPTIONS = {
                     posId: "",
                     name: "",
                     variants: [],
                 };
 
-                options.posId = integrationMappings[`${innerItem.id}_${EIntegrationType.DOSHII}`].externalItemId;
-                options.name = innerItem.name;
+                options.posId = integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId;
+                options.name = modifierGroup.name;
 
-                if (innerItem.modifiers) {
-                    for (let childInner of innerItem.modifiers) {
-                        let variants: IDOSHIITEMSOPTIONSVARIANTS = {
+                if (modifierGroup.modifiers) {
+                    for (let modifier of modifierGroup.modifiers) {
+                        let variants: IDOSHII_ITEMS_OPTIONS_VARIANTS = {
                             posId: "",
                             name: "",
                             price: "",
                         };
 
-                        variants.posId = integrationMappings[`${childInner.id}_${EIntegrationType.DOSHII}`].externalItemId;
-                        variants.name = childInner.name;
-                        variants.price = childInner.price.toString();
-                        options.variants.push(variants);
+                        variants.posId = integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId;
+                        variants.name = modifier.name;
+                        variants.price = modifier.price.toString();
+
+                        for (var i = 0; i < modifier.quantity; i++) {
+                            options.variants.push(variants);
+                        }
                     }
                 }
 
                 items.options.push(options);
             }
         }
-        let itemTaxes: IDOSHIITEMSTAXES = {
+        let itemTaxes: IDOSHII_ITEMS_TAXES = {
             posId: items.posId,
             name: items.name,
             amount: "15",
@@ -211,8 +216,11 @@ const createDoshiiOrder = async (
     doshiiCredentials: IThirdPartyIntegrationsDoshii,
     integrationMappings: IINTEGRATION_MAPPINGS
 ) => {
-    const convertedData = convertDoshiiOrder(order, integrationMappings);
-    const result = await createOrder(doshiiCredentials, convertedData);
+    const doshiiOrder = convertDoshiiOrder(order, integrationMappings);
+
+    console.log("xxx...doshiiOrder", JSON.stringify(doshiiOrder));
+
+    const result = await createOrder(doshiiCredentials, doshiiOrder);
 
     return result;
 };

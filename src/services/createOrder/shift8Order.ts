@@ -1,4 +1,4 @@
-import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../Model/Interface";
+import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../model/interface";
 
 const axios = require("axios");
 const AWS = require("aws-sdk");
