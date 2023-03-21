@@ -5,13 +5,13 @@ import {
     IDOSHII_ITEMS,
     IDOSHII_ITEMS_OPTIONS,
     IDOSHII_ITEMS_OPTIONS_VARIANTS,
-    IDOSHII_CONSUMER,
     IDOSHII_ITEMS_TAXES,
     IDOSHII_LOG,
     IDOSHII_TRANSACTIONS,
     IINTEGRATION_MAPPINGS,
     EIntegrationType,
     IThirdPartyIntegrationsDoshii,
+    IDOSHII_CONSUMER,
 } from "../../model/interface";
 
 import axios from "axios";
@@ -73,7 +73,7 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         log: log,
     };
 
-    for (let product of tabinOrder.products) {
+    tabinOrder.products.forEach((product) => {
         let items: IDOSHII_ITEMS = {
             posId: integrationMappings[`${product.id}_${EIntegrationType.DOSHII}`].externalItemId,
             name: product.name,
@@ -100,32 +100,36 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         };
 
         if (product.category?.name) {
-            let categoryName = product.category?.name;
+            const categoryName = product.category?.name;
+
             items.tags.push(categoryName);
         }
 
         if (product.modifierGroups) {
-            for (let modifierGroup of product.modifierGroups) {
-                let options: IDOSHII_ITEMS_OPTIONS = {
+            product.modifierGroups.forEach((modifierGroup) => {
+                const options: IDOSHII_ITEMS_OPTIONS = {
                     posId: integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId,
                     name: modifierGroup.name,
                     variants: [],
                 };
 
                 if (modifierGroup.modifiers) {
-                    for (let modifier of modifierGroup.modifiers) {
-                        let variants: IDOSHII_ITEMS_OPTIONS_VARIANTS = {
+                    modifierGroup.modifiers.forEach((modifier) => {
+                        const variants: IDOSHII_ITEMS_OPTIONS_VARIANTS = {
                             posId: integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
                             name: modifier.name,
                             price: modifier.price.toString(),
                         };
 
-                        options.variants.push(variants);
-                    }
+                        //If quantity is more then 1, add item 'quantity' number of times.
+                        for (var mIndex = 0; mIndex < modifier.quantity; mIndex++) {
+                            options.variants.push(variants);
+                        }
+                    });
                 }
 
                 items.options.push(options);
-            }
+            });
         }
         let itemTaxes: IDOSHII_ITEMS_TAXES = {
             posId: items.posId,
@@ -139,45 +143,47 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         items.taxes.push(itemTaxes);
         order.items.push(items);
         order.taxes.push(orderTaxes);
-    }
+    });
+
+    const consumer: IDOSHII_CONSUMER = {
+        name: tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : "Tabin",
+        email: tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : "dev@tabin.co.nz",
+        phone: tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : "+642102828894",
+        address: {
+            line1: "1824B River Road,",
+            line2: " Flagstaff",
+            city: "Hamilton",
+            state: "Hamilton",
+            postalCode: "3210",
+            country: "NZ",
+            notes: "Tabin Kiosk",
+        },
+    };
+
+    const transactions: IDOSHII_TRANSACTIONS[] = [
+        {
+            amount: tabinOrder.payments && tabinOrder.payments.length > 0 ? tabinOrder.payments[0].amount : 0,
+            reference: "",
+            invoice: "",
+            linkedTrxId: "11",
+            method:
+                tabinOrder.paymentAmounts && tabinOrder.paymentAmounts.cash > 0
+                    ? "cash"
+                    : tabinOrder.paymentAmounts && tabinOrder.paymentAmounts.eftpos > 0
+                    ? "eftpos"
+                    : "other",
+            tip: 0,
+            prepaid: true,
+            surcounts: [],
+        },
+    ];
 
     const convertedData: IDOSHII_ORDER_FINAL_DATA = {
         order: order,
-        consumer: {
-            name: tabinOrder.customerInformation?.firstName ? tabinOrder.customerInformation.firstName : "Tabin",
-            email: tabinOrder.customerInformation?.email ? tabinOrder.customerInformation.email : "dev@tabin.co.nz",
-            phone: tabinOrder.customerInformation?.phoneNumber ? tabinOrder.customerInformation.phoneNumber : "+642102828894",
-            address: {
-                line1: "1824B River Road,",
-                line2: " Flagstaff",
-                city: "Hamilton",
-                state: "Hamilton",
-                postalCode: "3210",
-                country: "NZ",
-                notes: "Tabin Kiosk",
-            },
-        },
-        transactions: [],
+        consumer: consumer,
+        transactions: transactions,
         members: [],
     };
-
-    let transactions: IDOSHII_TRANSACTIONS = {
-        amount: tabinOrder.payments && tabinOrder.payments.length > 0 ? tabinOrder.payments[0].amount : 0,
-        reference: "",
-        invoice: "",
-        linkedTrxId: "11",
-        method:
-            tabinOrder.paymentAmounts && tabinOrder.paymentAmounts.cash > 0
-                ? "cash"
-                : tabinOrder.paymentAmounts && tabinOrder.paymentAmounts.eftpos > 0
-                ? "eftpos"
-                : "other",
-        tip: 0,
-        prepaid: true,
-        surcounts: [],
-    };
-
-    convertedData.transactions.push(transactions);
 
     return convertedData;
 };
