@@ -168,8 +168,8 @@ export interface ITABIN_ITEMS {
 export interface ICategory {
     categoryId: string;
     name: string;
-    kitchenName: string;
-    description: string;
+    kitchenName?: string;
+    description?: string;
     displaySequence: number;
 }
 
@@ -183,10 +183,12 @@ export interface IProduct {
     productId: string;
     name: string;
     description: string;
-    kitchenName: string;
+    kitchenName?: string;
+    tags?: string[];
     price: number;
-    skuCode: string;
-    totalQuantityAvailable: number;
+    skuCode?: string;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
 }
 
 export interface IProductModifierGroupLink {
@@ -198,6 +200,7 @@ export interface IProductModifierGroupLink {
 export interface IModifierGroup {
     modifierGroupId: string;
     name: string;
+    kitchenName?: string;
     choiceDuplicate: number;
     choiceMin: number;
     choiceMax: number;
@@ -212,6 +215,7 @@ export interface IModifierGroupModifierLink {
 export interface IModifier {
     modifierId: string;
     name: string;
+    kitchenName?: string;
     price: number;
 }
 

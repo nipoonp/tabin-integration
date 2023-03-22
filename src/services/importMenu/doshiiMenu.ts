@@ -9,10 +9,12 @@ import {
     IThirdPartyIntegrationsDoshii,
 } from "../../model/interface";
 
+import { IDOSHII_MENU, IDOSHII_MENU_PRODUCT, IDOSHII_MENU_INCLUDED_ITEM, IDOSHII_MENU_OPTION } from "../../model/doshiiMenu";
+
 import axios from "axios";
 import { sign } from "jsonwebtoken";
 
-const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii): Promise<IDOSHII_MENU> => {
     return new Promise(async (resolve, reject) => {
         try {
             const token = sign(
@@ -23,7 +25,7 @@ const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
                 doshiiCredentials.clientSecret
             );
 
-            let headers = {
+            const headers = {
                 Authorization: "Bearer" + " " + token,
                 Accept: "application/json",
                 "doshii-location-id": doshiiCredentials.locationId,
@@ -35,8 +37,6 @@ const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
                 headers: headers,
             });
 
-            console.log("xxx...result: ", JSON.stringify(result));
-
             if (result.data) resolve(result.data);
         } catch (e) {
             reject(e);
@@ -45,164 +45,169 @@ const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
 };
 
 const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
-    let categories: ICategory[] = [];
-    let products: IProduct[] = [];
-    let categoryProductLinks: ICategoryProductLink[] = [];
-    let modifierGroups: IModifierGroup[] = [];
-    let productModifierGroupLinks: IProductModifierGroupLink[] = [];
-    let modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
-    let modifiers: IModifier[] = [];
+    const categories: ICategory[] = [];
+    const products: IProduct[] = [];
+    const categoryProductLinks: ICategoryProductLink[] = [];
+    const modifierGroups: IModifierGroup[] = [];
+    const productModifierGroupLinks: IProductModifierGroupLink[] = [];
+    const modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
+    const modifiers: IModifier[] = [];
 
-    let data: any = await menuAPI(doshiiCredentials);
+    const doshiiMenu: IDOSHII_MENU = await menuAPI(doshiiCredentials);
 
-    let productsData = data.products;
-    let sequence = 0;
+    console.log("xxx...result: ", JSON.stringify(doshiiMenu));
 
-    productsData.map((item: any) => {
-        sequence++;
-        let category: ICategory = {
-            categoryId: item.tags.join(" ") + "-" + sequence,
-            name: item.tags.join(" "),
-            kitchenName: "",
-            description: "",
-            displaySequence: sequence,
-        };
+    //Create new categories from product tags
+    doshiiMenu.products?.forEach((doshiiProduct: IDOSHII_MENU_PRODUCT) => {
+        doshiiProduct.tags?.forEach((tag: string, index: number) => {
+            //Check if category already created
+            const isCategoryCreated = categories.some((item) => item.categoryId === tag);
 
-        categories.push(category);
-
-        let product: IProduct = {
-            productId: item.posId,
-            name: item.name,
-            kitchenName: item.alternateNames && item.alternateNames.default ? item.alternateNames.default.kitchen : "",
-            price: item.unitPrice,
-            skuCode: "",
-            totalQuantityAvailable: 0,
-            description: item.description,
-        };
-
-        products.push(product);
-
-        let categoryProductLink: ICategoryProductLink = {
-            categoryId: item.tags.join(" ") + "-" + sequence,
-            productId: item.posId,
-            displaySequence: sequence,
-        };
-
-        categoryProductLinks.push(categoryProductLink);
-
-        if (item.includedItems.length > 0) {
-            let includedItems = item.includedItems;
-            includedItems.map((innerItem1: any) => {
-                let product: IProduct = {
-                    productId: innerItem1.posId,
-                    name: innerItem1.name,
-                    kitchenName: innerItem1.alternateNames && innerItem1.alternateNames.default ? innerItem1.alternateNames.default.kitchen : "",
-                    price: innerItem1.unitPrice,
-                    skuCode: "",
-                    totalQuantityAvailable: innerItem1.quantity,
-                    description: "",
-                };
-                products.push(product);
-
-                let categoryProductLink: ICategoryProductLink = {
-                    categoryId: item.tags.join(" ") + "-" + sequence,
-                    productId: innerItem1.posId,
-                    displaySequence: sequence,
-                };
-
-                categoryProductLinks.push(categoryProductLink);
-
-                if (innerItem1.options.length > 0) {
-                    let innerOptions = innerItem1.options;
-
-                    innerOptions.map((opt: any, index: number) => {
-                        let modgroup: IModifierGroup = {
-                            modifierGroupId: opt.posId,
-                            name: opt.name,
-                            choiceDuplicate: opt.max,
-                            choiceMin: opt.min,
-                            choiceMax: opt.max,
-                        };
-
-                        modifierGroups.push(modgroup);
-
-                        let productModGroupLink: IProductModifierGroupLink = {
-                            productId: innerItem1.posId,
-                            modifierGroupId: opt.posId,
-                            displaySequence: index,
-                        };
-
-                        productModifierGroupLinks.push(productModGroupLink);
-                        if (opt.variants && opt.variants.length > 0) {
-                            let variants = opt.variants;
-
-                            variants.map((v: any, index2: number) => {
-                                let modobj: IModifier = {
-                                    modifierId: v.posId,
-                                    name: v.name,
-                                    price: v.price,
-                                };
-                                modifiers.push(modobj);
-
-                                let modifierGroupModifierLink: IModifierGroupModifierLink = {
-                                    modifierGroupId: opt.posId,
-                                    modifierId: v.posId,
-                                    displaySequence: index2,
-                                };
-
-                                modifierGroupModifierLinks.push(modifierGroupModifierLink);
-                            });
-                        }
-                    });
-                }
-            });
-        }
-
-        if (item.options.length > 0) {
-            let itemOptions = item.options;
-            itemOptions.map((opt: any, index: number) => {
-                let modgroup: IModifierGroup = {
-                    modifierGroupId: opt.posId,
-                    name: opt.name,
-                    choiceDuplicate: opt.max,
-                    choiceMin: opt.min,
-                    choiceMax: opt.max,
-                };
-
-                modifierGroups.push(modgroup);
-
-                let productModGroupLink: IProductModifierGroupLink = {
-                    productId: item.posId,
-                    modifierGroupId: opt.posId,
+            if (!isCategoryCreated) {
+                const category: ICategory = {
+                    categoryId: tag,
+                    name: tag,
                     displaySequence: index,
                 };
 
-                productModifierGroupLinks.push(productModGroupLink);
+                categories.push(category);
+            }
+        });
 
-                if (opt.variants && opt.variants.length > 0) {
-                    let variants = opt.variants;
+        //Check if product already created
+        const isProductCreated = products.some((item) => item.productId === doshiiProduct.posId);
 
-                    variants.map((v: any, index2: number) => {
-                        let modobj: IModifier = {
-                            modifierId: v.posId,
-                            name: v.name,
-                            price: v.price,
-                        };
+        if (!isProductCreated) {
+            const product: IProduct = {
+                productId: doshiiProduct.posId || "",
+                name: doshiiProduct.name || "",
+                kitchenName: doshiiProduct.alternateNames?.default.kitchen || "",
+                description: doshiiProduct.description || "",
+                tags: doshiiProduct.dietary || [],
+                price: parseInt(doshiiProduct.unitPrice || "0"),
+                skuCode: doshiiProduct.productIds?.sku || "",
+                soldOut: doshiiProduct.availability === "unavailable" ? true : false,
+            };
 
-                        modifiers.push(modobj);
-
-                        let modifierGroupModifierLink: IModifierGroupModifierLink = {
-                            modifierGroupId: opt.posId,
-                            modifierId: v.posId,
-                            displaySequence: index2,
-                        };
-
-                        modifierGroupModifierLinks.push(modifierGroupModifierLink);
-                    });
-                }
-            });
+            products.push(product);
         }
+
+        doshiiProduct.tags?.forEach((tag: string, index: number) => {
+            const categoryProductLink: ICategoryProductLink = {
+                categoryId: tag,
+                productId: doshiiProduct.posId || "",
+                displaySequence: index,
+            };
+
+            categoryProductLinks.push(categoryProductLink);
+        });
+
+        // doshiiProduct.includedItems?.forEach((doshiiIncludedItem: IDOSHII_MENU_INCLUDED_ITEM) => {
+        //     const product: IProduct = {
+        //         productId: doshiiIncludedItem.posId,
+        //         name: doshiiIncludedItem.name,
+        //         kitchenName:
+        //             doshiiIncludedItem.alternateNames && doshiiIncludedItem.alternateNames.default
+        //                 ? doshiiIncludedItem.alternateNames.default.kitchen
+        //                 : "",
+        //         price: parseInt(doshiiIncludedItem.unitPrice),
+        //         skuCode: "",
+        //         totalQuantityAvailable: parseInt(doshiiIncludedItem.quantity),
+        //         description: "",
+        //     };
+
+        //     products.push(product);
+
+        //     doshiiIncludedItem.innerOptions?.forEach((option: any, index: number) => {
+        //         const modifierGroup: IModifierGroup = {
+        //             modifierGroupId: option.posId,
+        //             name: option.name,
+        //             choiceDuplicate: option.max,
+        //             choiceMin: option.min,
+        //             choiceMax: option.max,
+        //         };
+
+        //         modifierGroups.push(modifierGroup);
+
+        //         const productModifierGroupLink: IProductModifierGroupLink = {
+        //             productId: doshiiIncludedItem.posId,
+        //             modifierGroupId: option.posId,
+        //             displaySequence: index,
+        //         };
+
+        //         productModifierGroupLinks.push(productModifierGroupLink);
+
+        //         option.variants?.forEach((variant: any, index2: number) => {
+        //             const modifier: IModifier = {
+        //                 modifierId: variant.posId,
+        //                 name: variant.name,
+        //                 price: variant.price,
+        //             };
+
+        //             modifiers.push(modifier);
+
+        //             const modifierGroupModifierLink: IModifierGroupModifierLink = {
+        //                 modifierGroupId: option.posId,
+        //                 modifierId: variant.posId,
+        //                 displaySequence: index2,
+        //             };
+
+        //             modifierGroupModifierLinks.push(modifierGroupModifierLink);
+        //         });
+        //     });
+        // });
+
+        doshiiProduct.options?.forEach((doshiiOption: IDOSHII_MENU_OPTION, index: number) => {
+            //Check if modifierGroup already created
+            const isModifierGroupCreated = modifierGroups.some((item) => item.modifierGroupId === doshiiOption.posId);
+
+            if (!isModifierGroupCreated) {
+                const modifierGroup: IModifierGroup = {
+                    modifierGroupId: doshiiOption.posId,
+                    name: doshiiOption.name,
+                    kitchenName: doshiiOption.alternateNames?.default.kitchen || "",
+                    choiceMin: parseInt(doshiiOption.min || "0"),
+                    choiceMax: parseInt(doshiiOption.max || "0"),
+                    choiceDuplicate: 1, //Modifier choiceDuplicate > 1 is not support in doshii
+                };
+
+                modifierGroups.push(modifierGroup);
+            }
+
+            const productModifierGroupLink: IProductModifierGroupLink = {
+                productId: doshiiProduct.posId || "",
+                modifierGroupId: doshiiOption.posId,
+                displaySequence: index,
+            };
+
+            productModifierGroupLinks.push(productModifierGroupLink);
+
+            doshiiOption.variants?.forEach((doshiiVariant, index2: number) => {
+                //Check if modifier already created
+                const isModifierCreated = modifiers.some((item) => item.modifierId === doshiiVariant.posId);
+
+                if (!isModifierCreated) {
+                    const modifier: IModifier = {
+                        modifierId: doshiiVariant.posId,
+                        name: doshiiVariant.name,
+                        kitchenName: doshiiVariant.alternateNames?.default.kitchen || "",
+                        price: parseInt(doshiiVariant.price || "0"),
+                    };
+
+                    modifiers.push(modifier);
+                }
+
+                const modifierGroupModifierLink: IModifierGroupModifierLink = {
+                    modifierGroupId: doshiiOption.posId,
+                    modifierId: doshiiVariant.posId,
+                    displaySequence: index2,
+                };
+
+                modifierGroupModifierLinks.push(modifierGroupModifierLink);
+            });
+        });
     });
+
     // console.log("categories", categories);
     // console.log("products", products);
     // console.log("categoryProductLinks", categoryProductLinks);

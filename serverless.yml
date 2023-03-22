@@ -24,6 +24,7 @@ provider:
                   Action:
                       - "dynamodb:PutItem"
                   Resource:
+                      - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/IntegrationMapping-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Category-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/Product-ki7ehbmllzgn3lz5np3cuhf5ba-dev"
                       - "arn:aws:dynamodb:ap-southeast-2:319846238176:table/ModifierGroup-ki7ehbmllzgn3lz5np3cuhf5ba-dev"

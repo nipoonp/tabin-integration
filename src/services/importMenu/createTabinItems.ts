@@ -49,6 +49,7 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 name: product.name,
                 kitchenName: product.kitchenName || undefined,
                 description: product.description || undefined,
+                tags: product.tags || undefined,
                 price: product.price,
                 skuCode: product.skuCode || undefined,
                 totalQuantityAvailable: product.totalQuantityAvailable || undefined,
@@ -71,6 +72,7 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
             Item: {
                 id: `${uuid}_${modifierGroup.modifierGroupId}`,
                 name: modifierGroup.name,
+                kitchenName: modifierGroup.kitchenName,
                 choiceMin: modifierGroup.choiceMin,
                 choiceDuplicate: modifierGroup.choiceDuplicate,
                 choiceMax: modifierGroup.choiceMax,
@@ -93,6 +95,7 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
             Item: {
                 id: `${uuid}_${modifier.modifierId}`,
                 name: modifier.name,
+                kitchenName: modifier.kitchenName,
                 price: modifier.price,
                 modifierRestaurantId: restaurantId,
                 owner: restaurantManagerId,

@@ -115,16 +115,14 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
 
                 if (modifierGroup.modifiers) {
                     modifierGroup.modifiers.forEach((modifier) => {
+                        //Modifier choiceDuplicate > 1 is not support in doshii
                         const variants: IDOSHII_ITEMS_OPTIONS_VARIANTS = {
                             posId: integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
                             name: modifier.name,
                             price: modifier.price.toString(),
                         };
 
-                        //If quantity is more then 1, add item 'quantity' number of times.
-                        for (var mIndex = 0; mIndex < modifier.quantity; mIndex++) {
-                            options.variants.push(variants);
-                        }
+                        options.variants.push(variants);
                     });
                 }
 
