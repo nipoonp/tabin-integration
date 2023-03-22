@@ -16,6 +16,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
     const modifierGroupIds = {};
     const modifierIds = {};
 
+    const now = new Date().toISOString();
+
     for (var i = 0; i < categories.length; i++) {
         const category = categories[i];
 
@@ -30,6 +32,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 displaySequence: category.displaySequence,
                 categoryRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -55,6 +59,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 totalQuantityAvailable: product.totalQuantityAvailable || undefined,
                 productRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -78,6 +84,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 choiceMax: modifierGroup.choiceMax,
                 modifierGroupRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -97,8 +105,11 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 name: modifier.name,
                 kitchenName: modifier.kitchenName,
                 price: modifier.price,
+                modifierProductModifierId: productIds[modifier.modifierProductModifierId],
                 modifierRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -139,6 +150,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 productModifierGroupLinkModifierGroupId: modifierGroupIds[productModifierGroupLink.modifierGroupId],
                 productModifierGroupLinkRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -154,10 +167,13 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
             Item: {
                 id: uuid,
                 displaySequence: modifierGroupModifierLink.displaySequence,
+                preSelectedQuantity: modifierGroupModifierLink.preSelectedQuantity,
                 modifierGroupModifierLinkModifierGroupId: modifierGroupIds[modifierGroupModifierLink.modifierGroupId],
                 modifierGroupModifierLinkModifierId: modifierIds[modifierGroupModifierLink.modifierId],
                 modifierGroupModifierLinkRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -177,6 +193,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 integrationType: integrationType,
                 integrationMappingRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -195,6 +213,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 integrationType: integrationType,
                 integrationMappingRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 
@@ -213,6 +233,8 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 integrationType: integrationType,
                 integrationMappingRestaurantId: restaurantId,
                 owner: restaurantManagerId,
+                createdAt: now,
+                updatedAt: now,
             },
         };
 

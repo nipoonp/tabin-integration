@@ -182,9 +182,9 @@ export interface ICategoryProductLink {
 export interface IProduct {
     productId: string;
     name: string;
-    description: string;
+    description?: string;
     kitchenName?: string;
-    tags?: string[];
+    tags?: string;
     price: number;
     skuCode?: string;
     totalQuantityAvailable?: number;
@@ -210,6 +210,7 @@ export interface IModifierGroupModifierLink {
     modifierGroupId: string;
     modifierId: string;
     displaySequence: number;
+    preSelectedQuantity?: number;
 }
 
 export interface IModifier {
@@ -217,6 +218,7 @@ export interface IModifier {
     name: string;
     kitchenName?: string;
     price: number;
+    modifierProductModifierId: string;
 }
 
 export interface IDOSHII_ORDER {

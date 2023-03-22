@@ -9,7 +9,13 @@ import {
     IThirdPartyIntegrationsDoshii,
 } from "../../model/interface";
 
-import { IDOSHII_MENU, IDOSHII_MENU_PRODUCT, IDOSHII_MENU_INCLUDED_ITEM, IDOSHII_MENU_OPTION } from "../../model/doshiiMenu";
+import {
+    IDOSHII_MENU,
+    IDOSHII_MENU_PRODUCT,
+    IDOSHII_MENU_INCLUDED_ITEM,
+    IDOSHII_MENU_OPTION,
+    IDOSHII_MENU_BUNDLED_ITEM,
+} from "../../model/doshiiMenu";
 
 import axios from "axios";
 import { sign } from "jsonwebtoken";
@@ -57,107 +63,8 @@ const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshi
 
     console.log("xxx...result: ", JSON.stringify(doshiiMenu));
 
-    //Create new categories from product tags
-    doshiiMenu.products?.forEach((doshiiProduct: IDOSHII_MENU_PRODUCT) => {
-        doshiiProduct.tags?.forEach((tag: string, index: number) => {
-            //Check if category already created
-            const isCategoryCreated = categories.some((item) => item.categoryId === tag);
-
-            if (!isCategoryCreated) {
-                const category: ICategory = {
-                    categoryId: tag,
-                    name: tag,
-                    displaySequence: index,
-                };
-
-                categories.push(category);
-            }
-        });
-
-        //Check if product already created
-        const isProductCreated = products.some((item) => item.productId === doshiiProduct.posId);
-
-        if (!isProductCreated) {
-            const product: IProduct = {
-                productId: doshiiProduct.posId || "",
-                name: doshiiProduct.name || "",
-                kitchenName: doshiiProduct.alternateNames?.default.kitchen || "",
-                description: doshiiProduct.description || "",
-                tags: doshiiProduct.dietary || [],
-                price: parseInt(doshiiProduct.unitPrice || "0"),
-                skuCode: doshiiProduct.productIds?.sku || "",
-                soldOut: doshiiProduct.availability === "unavailable" ? true : false,
-            };
-
-            products.push(product);
-        }
-
-        doshiiProduct.tags?.forEach((tag: string, index: number) => {
-            const categoryProductLink: ICategoryProductLink = {
-                categoryId: tag,
-                productId: doshiiProduct.posId || "",
-                displaySequence: index,
-            };
-
-            categoryProductLinks.push(categoryProductLink);
-        });
-
-        // doshiiProduct.includedItems?.forEach((doshiiIncludedItem: IDOSHII_MENU_INCLUDED_ITEM) => {
-        //     const product: IProduct = {
-        //         productId: doshiiIncludedItem.posId,
-        //         name: doshiiIncludedItem.name,
-        //         kitchenName:
-        //             doshiiIncludedItem.alternateNames && doshiiIncludedItem.alternateNames.default
-        //                 ? doshiiIncludedItem.alternateNames.default.kitchen
-        //                 : "",
-        //         price: parseInt(doshiiIncludedItem.unitPrice),
-        //         skuCode: "",
-        //         totalQuantityAvailable: parseInt(doshiiIncludedItem.quantity),
-        //         description: "",
-        //     };
-
-        //     products.push(product);
-
-        //     doshiiIncludedItem.innerOptions?.forEach((option: any, index: number) => {
-        //         const modifierGroup: IModifierGroup = {
-        //             modifierGroupId: option.posId,
-        //             name: option.name,
-        //             choiceDuplicate: option.max,
-        //             choiceMin: option.min,
-        //             choiceMax: option.max,
-        //         };
-
-        //         modifierGroups.push(modifierGroup);
-
-        //         const productModifierGroupLink: IProductModifierGroupLink = {
-        //             productId: doshiiIncludedItem.posId,
-        //             modifierGroupId: option.posId,
-        //             displaySequence: index,
-        //         };
-
-        //         productModifierGroupLinks.push(productModifierGroupLink);
-
-        //         option.variants?.forEach((variant: any, index2: number) => {
-        //             const modifier: IModifier = {
-        //                 modifierId: variant.posId,
-        //                 name: variant.name,
-        //                 price: variant.price,
-        //             };
-
-        //             modifiers.push(modifier);
-
-        //             const modifierGroupModifierLink: IModifierGroupModifierLink = {
-        //                 modifierGroupId: option.posId,
-        //                 modifierId: variant.posId,
-        //                 displaySequence: index2,
-        //             };
-
-        //             modifierGroupModifierLinks.push(modifierGroupModifierLink);
-        //         });
-        //     });
-        // });
-
-        doshiiProduct.options?.forEach((doshiiOption: IDOSHII_MENU_OPTION, index: number) => {
+    const processDoshiiProductOptions = (doshiiProduct?: IDOSHII_MENU_PRODUCT) => {
+        doshiiProduct?.options?.forEach((doshiiOption: IDOSHII_MENU_OPTION, index: number) => {
             //Check if modifierGroup already created
             const isModifierGroupCreated = modifierGroups.some((item) => item.modifierGroupId === doshiiOption.posId);
 
@@ -206,15 +113,134 @@ const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshi
                 modifierGroupModifierLinks.push(modifierGroupModifierLink);
             });
         });
-    });
+    };
 
-    // console.log("categories", categories);
-    // console.log("products", products);
-    // console.log("categoryProductLinks", categoryProductLinks);
-    // console.log("modifierGroups", modifierGroups);
-    // console.log("productModifierGroupLinks", productModifierGroupLinks);
-    // console.log("modifierGroupModifierLinks", modifierGroupModifierLinks);
-    // console.log("modifiers", modifiers);
+    const processIncludedItems = (
+        doshiiProduct: IDOSHII_MENU_PRODUCT,
+        doshiiProductIncludedItem: IDOSHII_MENU_INCLUDED_ITEM,
+        index: number,
+        bundleMin?: string,
+        bundleMax?: string
+    ) => {
+        //Check if product already created
+        const isProductCreated = products.some((item) => item.productId === doshiiProductIncludedItem.posId);
+
+        if (!isProductCreated) {
+            const product: IProduct = {
+                productId: doshiiProductIncludedItem.posId,
+                name: doshiiProductIncludedItem.name,
+                kitchenName: doshiiProductIncludedItem.alternateNames?.default.kitchen || "",
+                price: parseInt(doshiiProductIncludedItem.unitPrice),
+                skuCode: doshiiProductIncludedItem.productIds?.sku || "",
+            };
+
+            products.push(product);
+        }
+
+        processDoshiiProductOptions(doshiiProductIncludedItem);
+
+        const doshiiProductDoshiiProductIncludedItemPosId = `${doshiiProduct.posId}_${doshiiProductIncludedItem.posId}`;
+
+        const modifierGroup: IModifierGroup = {
+            modifierGroupId: `${doshiiProductDoshiiProductIncludedItemPosId}_mg`,
+            name: `${doshiiProduct.name} ${doshiiProductIncludedItem.name}`,
+            choiceMin: parseInt(bundleMin || doshiiProductIncludedItem.quantity),
+            choiceMax: parseInt(bundleMax || doshiiProductIncludedItem.quantity),
+            choiceDuplicate: 1, //Modifier choiceDuplicate > 1 is not support in doshii
+        };
+
+        modifierGroups.push(modifierGroup);
+
+        const productModifierGroupLink: IProductModifierGroupLink = {
+            productId: doshiiProduct.posId || "",
+            modifierGroupId: `${doshiiProductDoshiiProductIncludedItemPosId}_mg`,
+            displaySequence: index,
+        };
+
+        productModifierGroupLinks.push(productModifierGroupLink);
+
+        const modifier: IModifier = {
+            modifierId: `${doshiiProductDoshiiProductIncludedItemPosId}_m`,
+            name: `${doshiiProductIncludedItem.name}`,
+            price: 0, //We don't need to worry about product modifier price
+            modifierProductModifierId: doshiiProductIncludedItem.posId,
+        };
+
+        modifiers.push(modifier);
+
+        const modifierGroupModifierLink: IModifierGroupModifierLink = {
+            modifierGroupId: `${doshiiProductDoshiiProductIncludedItemPosId}_mg`,
+            modifierId: `${doshiiProductDoshiiProductIncludedItemPosId}_m`,
+            displaySequence: index,
+            preSelectedQuantity: parseInt(doshiiProductIncludedItem.quantity || "0"),
+        };
+
+        modifierGroupModifierLinks.push(modifierGroupModifierLink);
+    };
+
+    //Create new categories from product tags
+    doshiiMenu.products?.forEach((doshiiProduct: IDOSHII_MENU_PRODUCT) => {
+        doshiiProduct.tags?.forEach((tag: string, index: number) => {
+            //Check if category already created
+            const isCategoryCreated = categories.some((item) => item.categoryId === tag);
+
+            if (!isCategoryCreated) {
+                const category: ICategory = {
+                    categoryId: tag,
+                    name: tag,
+                    displaySequence: index,
+                };
+
+                categories.push(category);
+            }
+        });
+
+        //Check if product already created
+        const isProductCreated = products.some((item) => item.productId === doshiiProduct.posId);
+
+        if (!isProductCreated) {
+            const product: IProduct = {
+                productId: doshiiProduct.posId || "",
+                name: doshiiProduct.name || "",
+                kitchenName: doshiiProduct.alternateNames?.default.kitchen || "",
+                description: doshiiProduct.description || "",
+                tags: doshiiProduct.dietary?.join(";"),
+                price: parseInt(doshiiProduct.unitPrice || "0"),
+                skuCode: doshiiProduct.productIds?.sku || "",
+                soldOut: doshiiProduct.availability === "unavailable" ? true : false,
+            };
+
+            products.push(product);
+        }
+
+        doshiiProduct.tags?.forEach((tag: string, index: number) => {
+            const categoryProductLink: ICategoryProductLink = {
+                categoryId: tag,
+                productId: doshiiProduct.posId || "",
+                displaySequence: index,
+            };
+
+            categoryProductLinks.push(categoryProductLink);
+        });
+
+        doshiiProduct.includedItems?.forEach((doshiiProductIncludedItem: IDOSHII_MENU_INCLUDED_ITEM, index) => {
+            processIncludedItems(doshiiProduct, doshiiProductIncludedItem, index);
+        });
+
+        doshiiProduct.bundledItems?.forEach((doshiiProductBundledItem: IDOSHII_MENU_BUNDLED_ITEM, index) => {
+            doshiiProductBundledItem.includedItems.forEach((doshiiProductBundleIncludedItem: IDOSHII_MENU_INCLUDED_ITEM) => {
+                processIncludedItems(
+                    doshiiProduct,
+                    doshiiProductBundleIncludedItem,
+                    index,
+                    doshiiProductBundledItem.min,
+                    doshiiProductBundledItem.max
+                );
+            });
+        });
+
+        processDoshiiProductOptions(doshiiProduct);
+    });
 
     return {
         categories: categories,
