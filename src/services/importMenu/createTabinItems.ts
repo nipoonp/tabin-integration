@@ -105,7 +105,7 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
                 name: modifier.name,
                 kitchenName: modifier.kitchenName,
                 price: modifier.price,
-                modifierProductModifierId: productIds[modifier.modifierProductModifierId],
+                modifierProductModifierId: modifier.modifierProductModifierId ? productIds[modifier.modifierProductModifierId] : undefined,
                 modifierRestaurantId: restaurantId,
                 owner: restaurantManagerId,
                 createdAt: now,

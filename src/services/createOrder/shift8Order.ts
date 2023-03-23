@@ -1,4 +1,5 @@
 import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../model/interface";
+import { taxRate, convertCentsToDollarsReturnFloat, calculateTaxAmount } from "../../util/util";
 
 const axios = require("axios");
 const AWS = require("aws-sdk");
@@ -29,15 +30,6 @@ interface IShift8Mod {
     ModTaxRate: number;
     ModNotes: string;
 }
-
-const taxRate = 0.15;
-
-const convertCentsToDollarsReturnFloat = (price) => parseFloat((price / 100).toFixed(2));
-
-const calculateTaxAmount = (total) => {
-    const diff = total / (1 + taxRate);
-    return total - diff;
-};
 
 const createOrder = async (shift8Credentials: IThirdPartyIntegrationsShift8, accessToken: string, shift8Order) => {
     const url = `${shift8Credentials.storeApiUrl}/ExternalSale?UID=${shift8Credentials.storeUuid}&LocationNumber=${shift8Credentials.storeLocationNumber}`;
@@ -196,7 +188,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
     return shift8Sale;
 };
 
-const createShift8Order = async (
+export const createShift8Order = async (
     order: IGET_RESTAURANT_ORDER_FRAGMENT,
     shift8Credentials: IThirdPartyIntegrationsShift8,
     integrationMappings: IINTEGRATION_MAPPINGS
@@ -258,5 +250,3 @@ const createShift8Order = async (
         return result.responseMessage;
     }
 };
-
-export { createShift8Order };
