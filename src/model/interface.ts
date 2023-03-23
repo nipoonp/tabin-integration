@@ -101,59 +101,6 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     image?: IS3Object | null;
 }
 
-//WIZBANG ORDER INTERFACES
-export interface IWIZBANG_ORDER_CUSTOMER {
-    CUSTOMERID: number | null;
-    NAME: string;
-    SURNAME: string;
-    FIRSTNAME: string;
-    MIDDLENAME: string;
-    TITLE: string;
-    PHONENO: string;
-    EMAIL: string;
-    ADDRESS: {
-        LINE1: string;
-        LINE2: string;
-        LINE3: string;
-        LINE4: string;
-        LINE5: string;
-    };
-    LOCATION: string;
-    NOTES: string;
-}
-
-export interface IWIZBANG_ORDER_ORDERLINES {
-    ITEMID: number | null;
-    QTY: number | null;
-    USEUNITPRICE: boolean;
-    ITEMABBREV: string;
-    UNITPRICE: number | null;
-    SALESTAXPERCENT: number | null;
-    ORDERLINEMODIFIERS: Array<IORDERLINE_MODIFIERS>;
-}
-
-export interface IORDERLINE_MODIFIERS {
-    MODIFIER: string;
-    USEMODPRICE: boolean;
-    MODPRICE: number | null;
-}
-
-export interface IWIZBANG_ORDER_TENDER {
-    TENDERTYPEID: number;
-    PAYMENT: number;
-    TIP: number;
-}
-
-export interface IWIZBANG_ORDER {
-    TABLENAME: string;
-    LINKCODE: string;
-    ACCOUNTID: number | null;
-    EATINPICKUPDELIVERY: number;
-    CUSTOMER: IWIZBANG_ORDER_CUSTOMER;
-    ORDERLINES: Array<IWIZBANG_ORDER_ORDERLINES>;
-    TENDER: Array<IWIZBANG_ORDER_TENDER>;
-}
-
 export interface ITABIN_ITEMS {
     categories: ICategory[];
     products: IProduct[];

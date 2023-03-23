@@ -7,6 +7,7 @@ import {
     IModifier,
     IModifierGroupModifierLink,
     IThirdPartyIntegrationsDoshii,
+    ITABIN_ITEMS,
 } from "../../model/interface";
 
 import {
@@ -20,37 +21,31 @@ import {
 import axios from "axios";
 import { sign } from "jsonwebtoken";
 
-const menuAPI = (doshiiCredentials: IThirdPartyIntegrationsDoshii): Promise<IDOSHII_MENU> => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const token = sign(
-                {
-                    clientId: doshiiCredentials.clientId,
-                    timestamp: new Date(),
-                },
-                doshiiCredentials.clientSecret
-            );
+const getDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+    const token = sign(
+        {
+            clientId: doshiiCredentials.clientId,
+            timestamp: new Date(),
+        },
+        doshiiCredentials.clientSecret
+    );
 
-            const headers = {
-                Authorization: "Bearer" + " " + token,
-                Accept: "application/json",
-                "doshii-location-id": doshiiCredentials.locationId,
-            };
+    const headers = {
+        Authorization: "Bearer" + " " + token,
+        Accept: "application/json",
+        "doshii-location-id": doshiiCredentials.locationId,
+    };
 
-            const result: any = await axios({
-                method: "get",
-                url: `${process.env.DOSHII_API_BASE_URL}partner/v3/locations/${doshiiCredentials.locationId}/menu`,
-                headers: headers,
-            });
-
-            if (result.data) resolve(result.data);
-        } catch (e) {
-            reject(e);
-        }
+    const result = await axios({
+        method: "get",
+        url: `${process.env.DOSHII_API_BASE_URL}partner/v3/locations/${doshiiCredentials.locationId}/menu`,
+        headers: headers,
     });
+
+    return result.data;
 };
 
-const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+const convertDoshiiMenu = async (doshiiMenu: IDOSHII_MENU) => {
     const categories: ICategory[] = [];
     const products: IProduct[] = [];
     const categoryProductLinks: ICategoryProductLink[] = [];
@@ -58,10 +53,6 @@ const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshi
     const productModifierGroupLinks: IProductModifierGroupLink[] = [];
     const modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
     const modifiers: IModifier[] = [];
-
-    const doshiiMenu: IDOSHII_MENU = await menuAPI(doshiiCredentials);
-
-    console.log("xxx...result: ", JSON.stringify(doshiiMenu));
 
     const processDoshiiProductOptions = (doshiiProduct?: IDOSHII_MENU_PRODUCT) => {
         doshiiProduct?.options?.forEach((doshiiOption: IDOSHII_MENU_OPTION, index: number) => {
@@ -252,4 +243,15 @@ const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshi
     };
 };
 
-export { convertDoshiiMenu };
+export const importDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) => {
+    try {
+        const doshiiMenu: IDOSHII_MENU = await getDoshiiMenu(doshiiCredentials);
+        const tabinItem: ITABIN_ITEMS = await convertDoshiiMenu(doshiiMenu);
+
+        console.log("xxx...doshiiMenu", doshiiMenu);
+
+        return tabinItem;
+    } catch (e) {
+        console.log("Error...", e);
+    }
+};

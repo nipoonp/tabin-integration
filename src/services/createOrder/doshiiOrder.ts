@@ -34,36 +34,29 @@ import { calculateTaxAmount, taxRate } from "../../util/util";
 //     area: "Tabin Kiosk",
 // };
 
-const createOrder = (doshiiCredentials: IThirdPartyIntegrationsDoshii, doshiiOrder: IDOSHII_CREATE_ORDER) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const token = sign(
-                {
-                    clientId: doshiiCredentials.clientId,
-                    timestamp: new Date(),
-                },
-                doshiiCredentials.clientSecret
-            );
+const createOrder = async (doshiiCredentials: IThirdPartyIntegrationsDoshii, doshiiOrder: IDOSHII_CREATE_ORDER) => {
+    const token = sign(
+        {
+            clientId: doshiiCredentials.clientId,
+            timestamp: new Date(),
+        },
+        doshiiCredentials.clientSecret
+    );
 
-            let headers = {
-                Authorization: "Bearer" + " " + token,
-                Accept: "application/json",
-                "doshii-location-id": doshiiCredentials.locationId,
-            };
+    let headers = {
+        Authorization: "Bearer" + " " + token,
+        Accept: "application/json",
+        "doshii-location-id": doshiiCredentials.locationId,
+    };
 
-            const result: any = await axios({
-                method: "post",
-                url: `${process.env.DOSHII_API_BASE_URL}partner/v3/orders`,
-                headers: headers,
-                data: doshiiOrder,
-            });
-
-            if (result.data) resolve(result.data);
-        } catch (e) {
-            console.error(e);
-            reject(e);
-        }
+    const result = await axios({
+        method: "post",
+        url: `${process.env.DOSHII_API_BASE_URL}partner/v3/orders`,
+        headers: headers,
+        data: doshiiOrder,
     });
+
+    return result.data;
 };
 
 const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrationMappings: IINTEGRATION_MAPPINGS) => {
@@ -224,21 +217,22 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
         // members: [],
     };
 
+    console.log("xxx...doshiiOrder", JSON.stringify(doshiiOrder));
+
     return doshiiOrder;
 };
 
-const createDoshiiOrder = async (
+export const createDoshiiOrder = async (
     order: IGET_RESTAURANT_ORDER_FRAGMENT,
     doshiiCredentials: IThirdPartyIntegrationsDoshii,
     integrationMappings: IINTEGRATION_MAPPINGS
 ) => {
-    const doshiiOrder = convertDoshiiOrder(order, integrationMappings);
+    try {
+        const doshiiOrder = convertDoshiiOrder(order, integrationMappings);
+        const result = await createOrder(doshiiCredentials, doshiiOrder);
 
-    console.log("xxx...doshiiOrder", JSON.stringify(doshiiOrder));
-
-    const result = await createOrder(doshiiCredentials, doshiiOrder);
-
-    return result;
+        return result;
+    } catch (e) {
+        console.log("Error...", e);
+    }
 };
-
-export { createDoshiiOrder };

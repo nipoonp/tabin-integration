@@ -3,8 +3,8 @@ var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
 
 import { EIntegrationType, ITABIN_ITEMS } from "../model/interface";
 import { createTabinItems } from "../services/importMenu/createTabinItems";
-import { convertDoshiiMenu } from "../services/importMenu/doshiiMenu";
-import { convertWizBangMenu } from "../services/importMenu/wizBangMenu";
+import { importDoshiiMenu } from "../services/importMenu/doshiiMenu";
+import { importWizBangMenu } from "../services/importMenu/wizBangMenu";
 
 export const handler = async (event, context, callback) => {
     console.log("event", event);
@@ -51,12 +51,12 @@ export const handler = async (event, context, callback) => {
         }
 
         if (restaurant.thirdPartyIntegrations?.wizBang?.enable === true) {
-            tabinItems = await convertWizBangMenu(restaurant.thirdPartyIntegrations.wizBang);
+            tabinItems = await importWizBangMenu(restaurant.thirdPartyIntegrations.wizBang);
             integrationType = EIntegrationType.WIZBANG;
         }
 
         if (restaurant.thirdPartyIntegrations?.doshii?.enable === true) {
-            tabinItems = await convertDoshiiMenu(restaurant.thirdPartyIntegrations.doshii);
+            tabinItems = await importDoshiiMenu(restaurant.thirdPartyIntegrations.doshii);
             integrationType = EIntegrationType.DOSHII;
         }
 

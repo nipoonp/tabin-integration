@@ -7,16 +7,26 @@ import {
     IModifier,
     IModifierGroupModifierLink,
     IThirdPartyIntegrationsWizBang,
+    ITABIN_ITEMS,
 } from "../../model/interface";
 import { convertDollarsToCentsReturnInt } from "../../util/util";
 
 import axios from "axios";
+import {
+    IWIZBANG_MENU,
+    IWIZBANG_MENU_MENU,
+    IWIZBANG_MENU_MENU_FOOD_BEVERAGE,
+    IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM,
+    IWIZBANG_MENU_MODIFIER,
+    IWIZBANG_MENU_MOD_GROUP,
+} from "../../model/wizBangMenu";
 
-const menuAPI = (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
+const getWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrationsWizBang): Promise<IWIZBANG_MENU[]> => {
     let username = wizBangCredentials.username;
     let password = wizBangCredentials.password;
     let encodedBase64Token = Buffer.from(`${username}:${password}`).toString("base64");
     let authorization = `Basic ${encodedBase64Token}`;
+
     authorization = authorization.replace(/[\r\n]+/gm, "");
 
     let headers = {
@@ -25,194 +35,171 @@ const menuAPI = (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
         Authorization: authorization,
     };
 
-    return new Promise(async (resolve, reject) => {
-        try {
-            const result: any = await axios({
-                method: "get",
-                url: `${wizBangCredentials.storeApiUrl}wizbang/restapi/setup/menu`,
-                headers: headers,
+    const result = await axios({
+        method: "get",
+        url: `${wizBangCredentials.storeApiUrl}wizbang/restapi/setup/menu`,
+        headers: headers,
+    });
+
+    return result.data.result;
+};
+
+const convertWizBangMenu = async (wizBangMenu: IWIZBANG_MENU[]) => {
+    let categories: ICategory[] = [];
+    let products: IProduct[] = [];
+    let categoryProductLinks: ICategoryProductLink[] = [];
+    let modifierGroups: IModifierGroup[] = [];
+    let productModifierGroupLinks: IProductModifierGroupLink[] = [];
+    let modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
+    let modifiers: IModifier[] = [];
+
+    wizBangMenu.forEach((data: IWIZBANG_MENU) => {
+        let wizBangMenus = data.Menu;
+        let wizBangModGroups = data.ModGroups;
+        let wizBangModifiers = data.Modifiers;
+
+        //Menu
+        wizBangMenus.forEach((wizBangMenu: IWIZBANG_MENU_MENU) => {
+            let wizBangFoods = wizBangMenu.Food;
+            let wizBangBeverages = wizBangMenu.Beverage;
+
+            //Food Category and Product
+            wizBangFoods.forEach((wizBangFood: IWIZBANG_MENU_MENU_FOOD_BEVERAGE) => {
+                let category: ICategory = {
+                    categoryId: String(wizBangFood.ItemGroupID),
+                    name: wizBangFood.ItemGroupName,
+                    kitchenName: wizBangFood.ItemGroupAbbrev,
+                    displaySequence: wizBangFood.ItemGroupOrder,
+                };
+
+                categories.push(category);
+
+                let wizBangItems = wizBangFood.Items ? wizBangFood.Items : [];
+
+                wizBangItems.forEach((wizBangItem: IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM) => {
+                    let product: IProduct = {
+                        productId: String(wizBangItem.ItemID),
+                        name: wizBangItem.ItemAbbrev,
+                        price: wizBangItem.ItemPrice ? convertDollarsToCentsReturnInt(wizBangItem.ItemPrice) : 0,
+                        skuCode: wizBangItem.Barcode || "",
+                        totalQuantityAvailable: wizBangItem.AvailQty || undefined,
+                    };
+
+                    products.push(product);
+
+                    let categoryProductLink: ICategoryProductLink = {
+                        categoryId: String(wizBangItem.ItemGroupID),
+                        productId: String(wizBangItem.ItemID),
+                        displaySequence: wizBangItem.ItemOrder,
+                    };
+
+                    categoryProductLinks.push(categoryProductLink);
+                });
             });
 
-            if (result.data) resolve(result.data);
-        } catch (err) {
-            console.log(err);
-            reject(err);
-        }
-    });
-};
+            //Beverage Category and Product
+            wizBangBeverages.forEach((wizBangBeverage: IWIZBANG_MENU_MENU_FOOD_BEVERAGE) => {
+                let category: ICategory = {
+                    categoryId: String(wizBangBeverage.ItemGroupID),
+                    name: wizBangBeverage.ItemGroupName,
+                    kitchenName: wizBangBeverage.ItemGroupAbbrev,
+                    displaySequence: wizBangBeverage.ItemGroupOrder,
+                };
 
-const convertWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
-    try {
-        let categories: ICategory[] = [];
-        let products: IProduct[] = [];
-        let categoryProductLinks: ICategoryProductLink[] = [];
-        let modifierGroups: IModifierGroup[] = [];
-        let productModifierGroupLinks: IProductModifierGroupLink[] = [];
-        let modifierGroupModifierLinks: IModifierGroupModifierLink[] = [];
-        let modifiers: IModifier[] = [];
+                categories.push(category);
 
-        const data: any = await menuAPI(wizBangCredentials);
+                let wizBangItems = wizBangBeverage.Items ? wizBangBeverage.Items : [];
 
-        let result = data.result;
-
-        result.map((res: any) => {
-            let menuArray = res.Menu;
-            let modGroupArray = res.ModGroups;
-            let modArray = res.Modifiers;
-            //Menu Array
-            if (menuArray.length > 0) {
-                menuArray.map((menu: any) => {
-                    let foodArray = menu.Food;
-                    let beverageArray = menu.Beverage;
-
-                    //Food Category and Product
-                    if (foodArray.length > 0) {
-                        foodArray.map((food: any) => {
-                            let category: ICategory = {
-                                categoryId: food.ItemGroupID,
-                                name: food.ItemGroupName,
-                                description: "",
-                                kitchenName: food.ItemGroupAbbrev,
-                                displaySequence: food.ItemGroupOrder,
-                            };
-
-                            categories.push(category);
-                            let itemsArray = food.Items ? food.Items : [];
-
-                            if (itemsArray.length > 0) {
-                                itemsArray.map((item: any) => {
-                                    let product: IProduct = {
-                                        productId: item.ItemID,
-                                        name: item.ItemAbbrev,
-                                        kitchenName: "",
-                                        description: "",
-                                        price: convertDollarsToCentsReturnInt(item.ItemPrice),
-                                        skuCode: item.Barcode,
-                                        totalQuantityAvailable: item.AvailQty,
-                                    };
-                                    products.push(product);
-                                    let categoryProductLink: ICategoryProductLink = {
-                                        categoryId: item.ItemGroupID,
-                                        productId: item.ItemID,
-                                        displaySequence: item.ItemOrder,
-                                    };
-                                    categoryProductLinks.push(categoryProductLink);
-                                });
-                            }
-                        });
-                    }
-
-                    //Beverage Category and Product
-                    if (beverageArray.length > 0) {
-                        beverageArray.map((bev: any) => {
-                            let category: ICategory = {
-                                categoryId: bev.ItemGroupID,
-                                name: bev.ItemGroupName,
-                                description: "",
-                                kitchenName: bev.ItemGroupAbbrev,
-                                displaySequence: bev.ItemGroupOrder,
-                            };
-                            categories.push(category);
-                            let itemsArray = bev.Items ? bev.Items : [];
-
-                            if (itemsArray.length > 0) {
-                                itemsArray.map((item: any) => {
-                                    let product: IProduct = {
-                                        productId: item.ItemID,
-                                        name: item.ItemAbbrev,
-                                        kitchenName: "",
-                                        description: "",
-                                        price: convertDollarsToCentsReturnInt(item.ItemPrice),
-                                        skuCode: item.Barcode,
-                                        totalQuantityAvailable: item.AvailQty,
-                                    };
-                                    products.push(product);
-                                    let categoryProductLink: ICategoryProductLink = {
-                                        categoryId: item.ItemGroupID,
-                                        productId: item.ItemID,
-                                        displaySequence: item.ItemOrder,
-                                    };
-                                    categoryProductLinks.push(categoryProductLink);
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-
-            //ModifierGroup, Product and modifier Link
-            if (modGroupArray.length > 0) {
-                modGroupArray.map((modGroup: any) => {
-                    let itemsListArray = modGroup.Items;
-                    let modifierListArray = modGroup.Modifiers;
-
-                    let modgroup: IModifierGroup = {
-                        modifierGroupId: modGroup.ModGroupID,
-                        name: modGroup.ModGroup,
-                        choiceDuplicate: modGroup.multi ? 100 : 1,
-                        choiceMin: modGroup.force ? 1 : 0,
-                        choiceMax: modGroup.force ? 100 : 0,
+                wizBangItems.forEach((wizBangItem) => {
+                    let product: IProduct = {
+                        productId: String(wizBangItem.ItemID),
+                        name: wizBangItem.ItemAbbrev,
+                        price: wizBangItem.ItemPrice ? convertDollarsToCentsReturnInt(wizBangItem.ItemPrice) : 0,
+                        skuCode: wizBangItem.Barcode || "",
+                        totalQuantityAvailable: wizBangItem.AvailQty || undefined,
                     };
 
-                    if (itemsListArray.length > 0) {
-                        itemsListArray.map((item: any, index) => {
-                            let productModifierGroupLink: IProductModifierGroupLink = {
-                                productId: item,
-                                modifierGroupId: modGroup.ModGroupID,
-                                displaySequence: index,
-                            };
-                            productModifierGroupLinks.push(productModifierGroupLink);
-                        });
-                    }
+                    products.push(product);
 
-                    if (modifierListArray.length > 0) {
-                        modifierListArray.map((modifier: any, index) => {
-                            let modifierGroupModifierLink: IModifierGroupModifierLink = {
-                                modifierGroupId: modGroup.ModGroupID,
-                                modifierId: modifier,
-                                displaySequence: index,
-                            };
-                            modifierGroupModifierLinks.push(modifierGroupModifierLink);
-                        });
-                    }
-
-                    modifierGroups.push(modgroup);
-                });
-            }
-
-            //Modifier
-            if (modArray.length > 0) {
-                modArray.map((modifier: any) => {
-                    let modobj: IModifier = {
-                        modifierId: modifier.ModifierID,
-                        name: modifier.Modifier,
-                        price: modifier.ModPrice ? convertDollarsToCentsReturnInt(modifier.ModPrice) : 0,
+                    let categoryProductLink: ICategoryProductLink = {
+                        categoryId: String(wizBangItem.ItemGroupID),
+                        productId: String(wizBangItem.ItemID),
+                        displaySequence: wizBangItem.ItemOrder,
                     };
-                    modifiers.push(modobj);
+
+                    categoryProductLinks.push(categoryProductLink);
                 });
-            }
+            });
         });
 
-        // console.log("categories", categories);
-        // console.log("products", products);
-        // console.log("categoryProductLinks", categoryProductLinks);
-        // console.log("modifierGroups", modifierGroups);
-        // console.log("productModifierGroupLinks", productModifierGroupLinks);
-        // console.log("modifierGroupModifierLinks", modifierGroupModifierLinks);
-        // console.log("modifiers", modifiers);
+        //ModifierGroup, Product and modifier Link
+        wizBangModGroups.forEach((wizBangModGroup: IWIZBANG_MENU_MOD_GROUP) => {
+            let wizBangItems = wizBangModGroup.Items;
+            let wizBangModifiers = wizBangModGroup.Modifiers;
 
-        return {
-            categories: categories,
-            products: products,
-            categoryProductLinks: categoryProductLinks,
-            modifierGroups: modifierGroups,
-            productModifierGroupLinks: productModifierGroupLinks,
-            modifierGroupModifierLinks: modifierGroupModifierLinks,
-            modifiers: modifiers,
-        };
-    } catch (err) {
-        throw err;
-    }
+            let modifierGroup: IModifierGroup = {
+                modifierGroupId: String(wizBangModGroup.ModGroupID),
+                name: wizBangModGroup.ModGroup,
+                choiceDuplicate: wizBangModGroup.Multi ? 100 : 1,
+                choiceMin: wizBangModGroup.Force ? 1 : 0,
+                choiceMax: wizBangModGroup.Force ? 100 : 0,
+            };
+
+            wizBangItems.forEach((wizBangItem: number, index) => {
+                let productModifierGroupLink: IProductModifierGroupLink = {
+                    productId: String(wizBangItem),
+                    modifierGroupId: String(wizBangModGroup.ModGroupID),
+                    displaySequence: index,
+                };
+
+                productModifierGroupLinks.push(productModifierGroupLink);
+            });
+
+            wizBangModifiers.forEach((wizBangModifier: number, index) => {
+                let modifierGroupModifierLink: IModifierGroupModifierLink = {
+                    modifierGroupId: String(wizBangModGroup.ModGroupID),
+                    modifierId: String(wizBangModifier),
+                    displaySequence: index,
+                };
+
+                modifierGroupModifierLinks.push(modifierGroupModifierLink);
+            });
+
+            modifierGroups.push(modifierGroup);
+        });
+
+        //Modifier
+        wizBangModifiers.forEach((wizBangModifier: IWIZBANG_MENU_MODIFIER) => {
+            let modifier: IModifier = {
+                modifierId: String(wizBangModifier.ModifierID),
+                name: wizBangModifier.Modifier,
+                price: wizBangModifier.ModPrice ? convertDollarsToCentsReturnInt(wizBangModifier.ModPrice) : 0,
+            };
+
+            modifiers.push(modifier);
+        });
+    });
+
+    return {
+        categories: categories,
+        products: products,
+        categoryProductLinks: categoryProductLinks,
+        modifierGroups: modifierGroups,
+        productModifierGroupLinks: productModifierGroupLinks,
+        modifierGroupModifierLinks: modifierGroupModifierLinks,
+        modifiers: modifiers,
+    };
 };
 
-export { convertWizBangMenu };
+export const importWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrationsWizBang) => {
+    try {
+        const wizBangMenu = await getWizBangMenu(wizBangCredentials);
+        const tabinItem: ITABIN_ITEMS = await convertWizBangMenu(wizBangMenu);
+
+        console.log("xxx...wizBangMenu", JSON.stringify(wizBangMenu));
+
+        return tabinItem;
+    } catch (e) {
+        console.log("Error...", e);
+    }
+};
