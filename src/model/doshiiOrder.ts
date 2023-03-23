@@ -55,8 +55,8 @@ export interface IDOSHII_ORDER_ITEM {
 }
 
 export interface IDOSHII_ORDER_ITEM_INCLUDED_ITEM {
-    name?: string;
     posId?: string;
+    name?: string;
     quantity?: number;
     unitPrice?: string;
     options?: IDOSHII_ORDER_ITEM_OPTION[];

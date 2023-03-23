@@ -1,4 +1,10 @@
-import { IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, EIntegrationType, IThirdPartyIntegrationsDoshii } from "../../model/interface";
+import {
+    IGET_RESTAURANT_ORDER_FRAGMENT,
+    IINTEGRATION_MAPPINGS,
+    EIntegrationType,
+    IThirdPartyIntegrationsDoshii,
+    IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT,
+} from "../../model/interface";
 
 import axios from "axios";
 
@@ -15,6 +21,7 @@ import {
     IDOSHII_ORDER_LOG,
     IDOSHII_ORDER_TAX,
     IDOSHII_TRANSACTION,
+    IDOSHII_ORDER_ITEM_INCLUDED_ITEM,
 } from "../../model/doshiiOrder";
 
 import { calculateTaxAmount, taxRate } from "../../util/util";
@@ -88,8 +95,35 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
 
     order.taxes?.push(orderTaxes);
 
+    const processModifierGroups = (modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[]): IDOSHII_ORDER_ITEM_OPTION[] => {
+        const options: IDOSHII_ORDER_ITEM_OPTION[] = [];
+
+        modifierGroups.forEach((modifierGroup) => {
+            const option: IDOSHII_ORDER_ITEM_OPTION = {
+                posId: integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId,
+                name: modifierGroup.name,
+                variants: [],
+            };
+
+            modifierGroup.modifiers?.forEach((modifier) => {
+                //Modifier choiceDuplicate > 1 is not support in doshii
+                const variant: IDOSHII_ORDER_ITEM_OPTION_VARIANT = {
+                    posId: integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
+                    name: modifier.name,
+                    price: modifier.price.toString(),
+                };
+
+                option.variants?.push(variant);
+            });
+
+            options.push(option);
+        });
+
+        return options;
+    };
+
     tabinOrder.products.forEach((product) => {
-        let items: IDOSHII_ORDER_ITEM = {
+        let item: IDOSHII_ORDER_ITEM = {
             posId: integrationMappings[`${product.id}_${EIntegrationType.DOSHII}`].externalItemId,
             name: product.name,
             quantity: product.quantity,
@@ -105,29 +139,36 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
             options: [],
         };
 
-        if (product.modifierGroups) {
-            product.modifierGroups.forEach((modifierGroup) => {
-                const options: IDOSHII_ORDER_ITEM_OPTION = {
-                    posId: integrationMappings[`${modifierGroup.id}_${EIntegrationType.DOSHII}`].externalItemId,
-                    name: modifierGroup.name,
-                    variants: [],
-                };
+        const includedItems: IDOSHII_ORDER_ITEM_INCLUDED_ITEM[] = [];
 
-                if (modifierGroup.modifiers) {
-                    modifierGroup.modifiers.forEach((modifier) => {
-                        //Modifier choiceDuplicate > 1 is not support in doshii
-                        const variants: IDOSHII_ORDER_ITEM_OPTION_VARIANT = {
-                            posId: integrationMappings[`${modifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
-                            name: modifier.name,
-                            price: modifier.price.toString(),
-                        };
+        product.modifierGroups?.forEach((modifierGroup) => {
+            modifierGroup.modifiers?.forEach((modifier) => {
+                modifier.productModifiers?.forEach((productModifier) => {
+                    item.type = "bundle";
 
-                        options.variants?.push(variants);
-                    });
-                }
+                    const includedItem: IDOSHII_ORDER_ITEM_INCLUDED_ITEM = {
+                        posId: integrationMappings[`${productModifier.id}_${EIntegrationType.DOSHII}`].externalItemId,
+                        name: productModifier.name,
+                        quantity: productModifier.quantity,
+                        unitPrice: "0", //Must pass in 0 for includedItem price
+                        options: [],
+                    };
 
-                items.options?.push(options);
+                    if (productModifier.modifierGroups) {
+                        includedItem.options = processModifierGroups(productModifier.modifierGroups);
+                    }
+
+                    includedItems.push(includedItem);
+                });
             });
+        });
+
+        if (includedItems.length > 0) {
+            item.includedItems = includedItems;
+        } else {
+            if (product.modifierGroups) {
+                item.options = processModifierGroups(product.modifierGroups);
+            }
         }
 
         let itemTaxes: IDOSHII_ORDER_TAX = {
@@ -139,8 +180,8 @@ const convertDoshiiOrder = (tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT, integrat
             value: Math.round(calculateTaxAmount(product.totalPrice * product.quantity)),
         };
 
-        items.taxes?.push(itemTaxes);
-        order.items?.push(items);
+        item.taxes?.push(itemTaxes);
+        order.items?.push(item);
     });
 
     // const consumer: IDOSHII_CONSUMER = {

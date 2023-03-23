@@ -96,7 +96,6 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     id: string;
     name: string;
     price: number;
-    preSelectedQuantity?: number | null;
     quantity: number;
     productModifiers?: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
     image?: IS3Object | null;
@@ -210,7 +209,6 @@ export interface IModifierGroupModifierLink {
     modifierGroupId: string;
     modifierId: string;
     displaySequence: number;
-    preSelectedQuantity?: number;
 }
 
 export interface IModifier {

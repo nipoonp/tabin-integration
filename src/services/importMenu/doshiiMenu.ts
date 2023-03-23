@@ -172,7 +172,6 @@ const convertDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshi
             modifierGroupId: `${doshiiProductDoshiiProductIncludedItemPosId}_mg`,
             modifierId: `${doshiiProductDoshiiProductIncludedItemPosId}_m`,
             displaySequence: index,
-            preSelectedQuantity: parseInt(doshiiProductIncludedItem.quantity || "0"),
         };
 
         modifierGroupModifierLinks.push(modifierGroupModifierLink);

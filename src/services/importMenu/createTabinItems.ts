@@ -167,7 +167,6 @@ const createTabinItems = async (tabinItems: ITABIN_ITEMS, integrationType: EInte
             Item: {
                 id: uuid,
                 displaySequence: modifierGroupModifierLink.displaySequence,
-                preSelectedQuantity: modifierGroupModifierLink.preSelectedQuantity,
                 modifierGroupModifierLinkModifierGroupId: modifierGroupIds[modifierGroupModifierLink.modifierGroupId],
                 modifierGroupModifierLinkModifierId: modifierIds[modifierGroupModifierLink.modifierId],
                 modifierGroupModifierLinkRestaurantId: restaurantId,
