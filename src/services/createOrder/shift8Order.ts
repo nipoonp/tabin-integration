@@ -1,35 +1,10 @@
-import { EIntegrationType, IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../model/interface";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IINTEGRATION_MAPPINGS, IThirdPartyIntegrationsShift8 } from "../../model/interface";
 import { taxRate, convertCentsToDollarsReturnFloat, calculateTaxAmount } from "../../util/util";
+import { SHIFT8_CREATE_ORDER, SHIFT8_ORDER_ITEM, SHIFT8_ORDER_ITEM_MOD } from "../../model/shift8Order";
 
 const axios = require("axios");
 const AWS = require("aws-sdk");
 const secretManager = new AWS.SecretsManager({ region: process.env.REGION });
-
-AWS.config.update({ region: process.env.REGION });
-
-var ddb = new AWS.DynamoDB.DocumentClient({ apiVersion: "2012-08-10" });
-
-interface IShift8Item {
-    ItemID: number;
-    ItemPLU: number;
-    ItemName: string;
-    ItemIncTax: number;
-    ItemTax: number;
-    ItemExTax: number;
-    ItemTaxRate: number;
-    ItemNotes: string;
-    ItemMods: IShift8Mod[];
-}
-
-interface IShift8Mod {
-    ModPLU: number;
-    ModName: string;
-    ModIncTax: number;
-    ModTax: number;
-    ModExTax: number;
-    ModTaxRate: number;
-    ModNotes: string;
-}
 
 const createOrder = async (shift8Credentials: IThirdPartyIntegrationsShift8, accessToken: string, shift8Order) => {
     const url = `${shift8Credentials.storeApiUrl}/ExternalSale?UID=${shift8Credentials.storeUuid}&LocationNumber=${shift8Credentials.storeLocationNumber}`;
@@ -65,7 +40,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
     const getShift8Items = (mappingData, tabinOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         let sno = 0;
 
-        const shift8Items: IShift8Item[] = [];
+        const shift8Items: SHIFT8_ORDER_ITEM[] = [];
 
         tabinOrder.products.forEach((product) => {
             const productTotalRounded = convertCentsToDollarsReturnFloat(product.price);
@@ -73,7 +48,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
             const productTotalTaxRounded = convertCentsToDollarsReturnFloat(productTotalTax);
             const productTotalExTaxRounded = convertCentsToDollarsReturnFloat(product.price - productTotalTax);
 
-            let shift8Item: IShift8Item = {
+            let shift8Item: SHIFT8_ORDER_ITEM = {
                 ItemID: sno,
                 ItemPLU: parseInt(mappingData[product.id]),
                 ItemName: product.name,
@@ -92,7 +67,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
                     const modifierTotalTaxRounded = convertCentsToDollarsReturnFloat(modifierTotalTax);
                     const modifierTotalExTaxRounded = convertCentsToDollarsReturnFloat(modifier.price - modifierTotalTax);
 
-                    const shift8Mod: IShift8Mod = {
+                    const shift8Mod: SHIFT8_ORDER_ITEM_MOD = {
                         ModPLU: parseInt(mappingData[modifier.id]),
                         ModName: modifier.name,
                         ModIncTax: modifierTotalRounded,
@@ -119,7 +94,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
                                     productModifierGroupModifier.price - productModifierGroupModifierTotalTax
                                 );
 
-                                const shift8ItemMod: IShift8Mod = {
+                                const shift8ItemMod: SHIFT8_ORDER_ITEM_MOD = {
                                     ModPLU: parseInt(mappingData[productModifierGroupModifier.id]),
                                     ModName: productModifierGroupModifier.name,
                                     ModIncTax: productModifierGroupModifierTotalRounded,
@@ -154,7 +129,7 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
     const tabinOrderTotalTaxRounded = convertCentsToDollarsReturnFloat(tabinOrderTotalTax);
     const tabinOrderTotalExTaxRounded = convertCentsToDollarsReturnFloat(tabinOrder.subTotal - tabinOrderTotalTax);
 
-    const shift8Sale = {
+    const shift8Sale: SHIFT8_CREATE_ORDER = {
         SaleTotalIncTax: tabinOrderTotalRounded,
         SaleTotalTax: tabinOrderTotalTaxRounded,
         SaleTotalExTax: tabinOrderTotalExTaxRounded,
@@ -167,8 +142,8 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
         OrderNotes: tabinOrder.notes || "",
         Items: getShift8Items(mappingData, tabinOrder),
         PaymentMedia: {
-            PaymentTypeNumber: process.env.SHIFT8_PAYMENT_TYPE_NUMBER,
-            PaymentMediaName: process.env.SHIFT8_PAYMENT_MEDIA_NAME,
+            PaymentTypeNumber: process.env.SHIFT8_PAYMENT_TYPE_NUMBER || "9972",
+            PaymentMediaName: process.env.SHIFT8_PAYMENT_MEDIA_NAME || "Kiosk Payment",
             PaymentAmount: tabinOrderTotalRounded,
             PaymentReferenceNumber: tabinOrder.id,
         },
