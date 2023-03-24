@@ -34,8 +34,6 @@ interface IShift8Mod {
 const createOrder = async (shift8Credentials: IThirdPartyIntegrationsShift8, accessToken: string, shift8Order) => {
     const url = `${shift8Credentials.storeApiUrl}/ExternalSale?UID=${shift8Credentials.storeUuid}&LocationNumber=${shift8Credentials.storeLocationNumber}`;
 
-    console.log("xxx...url", url);
-
     const headers = {
         Authorization: "Bearer" + " " + accessToken,
         Accept: "application/json",
@@ -48,7 +46,7 @@ const createOrder = async (shift8Credentials: IThirdPartyIntegrationsShift8, acc
         data: shift8Order,
     });
 
-    console.log("xxx...result.data", result.data);
+    console.log("xxx...result.data", JSON.stringify(result.data));
 
     return result.data;
 };
@@ -188,15 +186,9 @@ const convertShift8Order = (shift8Credentials: IThirdPartyIntegrationsShift8, ma
     return shift8Sale;
 };
 
-export const createShift8Order = async (
-    order: IGET_RESTAURANT_ORDER_FRAGMENT,
-    shift8Credentials: IThirdPartyIntegrationsShift8,
-    integrationMappings: IINTEGRATION_MAPPINGS
-) => {
+export const getShift8AccessToken = async () => {
     const apiConfigSecretId = process.env.SHIFT8_API_CONFIG_SECRET_ID;
     const apiTokenSecretId = process.env.SHIFT8_API_TOKEN_SECRET_ID;
-
-    console.log("xxx...event", event);
 
     const getSecrets = async () => {
         const shift8ApiConfig = await secretManager.getSecretValue({ SecretId: apiConfigSecretId }).promise();
@@ -211,42 +203,27 @@ export const createShift8Order = async (
         return { shift8Config, accessToken };
     };
 
-    const getIntegrationMappingData = async (restaurantId: string) => {
-        const queryParams = {
-            TableName: process.env.INTEGRATION_MAPPING_TABLE_NAME,
-            Limit: 10000,
-            IndexName: "byRestaurant",
-            KeyConditionExpression: "#integrationMappingRestaurantId = :integrationMappingRestaurantId and #integrationType = :integrationType",
-            ExpressionAttributeNames: {
-                "#integrationMappingRestaurantId": "integrationMappingRestaurantId",
-                "#integrationType": "integrationType",
-            },
-            ExpressionAttributeValues: {
-                ":integrationMappingRestaurantId": restaurantId,
-                ":integrationType": "SHIFT8",
-            },
-        };
-
-        const data = await ddb.query(queryParams).promise();
-
-        if (data.Items.length == 0) throw `No mapping data found for id, ${restaurantId}`;
-
-        const mappingData = {};
-
-        data.Items.forEach((item) => {
-            mappingData[item.itemId] = item.externalItemId;
-        });
-
-        return mappingData;
-    };
-
     const secrets = await getSecrets();
-    const mappingData = await getIntegrationMappingData(order.orderRestaurantId);
 
-    const shift8Order = convertShift8Order(shift8Credentials, mappingData, order);
-    const result = await createOrder(shift8Credentials, secrets.accessToken, shift8Order);
+    return secrets.accessToken;
+};
 
-    if (!result.isRequestSuccessful) {
-        return result.responseMessage;
+export const createShift8Order = async (
+    order: IGET_RESTAURANT_ORDER_FRAGMENT,
+    shift8Credentials: IThirdPartyIntegrationsShift8,
+    integrationMappings: IINTEGRATION_MAPPINGS
+) => {
+    try {
+        const accessToken = await getShift8AccessToken();
+        const shift8Order = convertShift8Order(shift8Credentials, integrationMappings, order);
+        const result = await createOrder(shift8Credentials, accessToken, shift8Order);
+
+        if (!result.isRequestSuccessful) {
+            return result.responseMessage;
+        }
+
+        return result;
+    } catch (e) {
+        console.log("Error...", e);
     }
 };

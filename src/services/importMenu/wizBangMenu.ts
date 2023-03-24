@@ -41,6 +41,8 @@ const getWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrationsWizBang
         headers: headers,
     });
 
+    console.log("xxx...result.data", JSON.stringify(result.data));
+
     return result.data.result;
 };
 
@@ -195,8 +197,6 @@ export const importWizBangMenu = async (wizBangCredentials: IThirdPartyIntegrati
     try {
         const wizBangMenu = await getWizBangMenu(wizBangCredentials);
         const tabinItem: ITABIN_ITEMS = await convertWizBangMenu(wizBangMenu);
-
-        console.log("xxx...wizBangMenu", JSON.stringify(wizBangMenu));
 
         return tabinItem;
     } catch (e) {

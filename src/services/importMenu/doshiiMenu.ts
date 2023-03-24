@@ -42,6 +42,8 @@ const getDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegrationsDoshii) =
         headers: headers,
     });
 
+    console.log("xxx...result.data", JSON.stringify(result.data));
+
     return result.data;
 };
 
@@ -247,8 +249,6 @@ export const importDoshiiMenu = async (doshiiCredentials: IThirdPartyIntegration
     try {
         const doshiiMenu: IDOSHII_MENU = await getDoshiiMenu(doshiiCredentials);
         const tabinItem: ITABIN_ITEMS = await convertDoshiiMenu(doshiiMenu);
-
-        console.log("xxx...doshiiMenu", doshiiMenu);
 
         return tabinItem;
     } catch (e) {

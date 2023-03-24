@@ -71,6 +71,8 @@ const createOrder = async (wizBangCredentials: IThirdPartyIntegrationsWizBang, d
         data: requestedData,
     });
 
+    console.log("xxx...result.data", JSON.stringify(result.data));
+
     return result.data;
 };
 

@@ -56,6 +56,8 @@ const createOrder = async (doshiiCredentials: IThirdPartyIntegrationsDoshii, dos
         data: doshiiOrder,
     });
 
+    console.log("xxx...result.data", JSON.stringify(result.data));
+
     return result.data;
 };
 
