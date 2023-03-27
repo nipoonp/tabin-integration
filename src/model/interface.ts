@@ -18,6 +18,121 @@ export interface IPayment {
     amount: number;
 }
 
+export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
+    id: string;
+    name: string;
+    image?: IS3Object | null;
+}
+
+export interface ICategory {
+    categoryId: string;
+    name: string;
+    kitchenName?: string;
+    description?: string;
+    displaySequence: number;
+}
+
+export interface IProduct {
+    productId: string;
+    name: string;
+    description?: string;
+    kitchenName?: string;
+    tags?: string;
+    price: number;
+    skuCode?: string;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
+}
+
+export interface ICategoryProductLink {
+    categoryId: string;
+    productId: string;
+    displaySequence: number;
+}
+
+export interface IModifierGroup {
+    modifierGroupId: string;
+    name: string;
+    kitchenName?: string;
+    choiceDuplicate: number;
+    choiceMin: number;
+    choiceMax: number;
+}
+
+export interface IProductModifierGroupLink {
+    productId: string;
+    modifierGroupId: string;
+    displaySequence: number;
+}
+
+export interface IModifier {
+    modifierId: string;
+    name: string;
+    kitchenName?: string;
+    price: number;
+    modifierProductModifierId?: string;
+}
+
+export interface IModifierGroupModifierLink {
+    modifierGroupId: string;
+    modifierId: string;
+    displaySequence: number;
+}
+
+export interface IThirdPartyIntegrationsShift8 {
+    enable: boolean;
+    storeApiUrl: string;
+    storeUuid: string;
+    storeLocationNumber: string;
+}
+
+export interface IThirdPartyIntegrationsWizBang {
+    enable: boolean;
+    storeApiUrl: string;
+    username: string;
+    password: string;
+}
+
+export interface IThirdPartyIntegrationsDoshii {
+    enable: boolean;
+    clientId: string;
+    clientSecret: string;
+    locationId: string;
+}
+
+export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    productModifiers?: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
+    image?: IS3Object | null;
+}
+
+export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
+    id: string;
+    name: string;
+    choiceDuplicate: number;
+    choiceMin: number;
+    choiceMax: number;
+    collapsedByDefault?: boolean;
+    hideForCustomer?: boolean | null;
+    modifiers?: IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT[];
+}
+
+export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
+    id: string;
+    name: string;
+    price: number;
+    totalPrice: number;
+    discount?: number;
+    quantity: number;
+    notes?: string | null;
+    image?: IS3Object | null;
+    category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
+    modifierGroups?: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}
+
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     placedAt: string;
@@ -48,9 +163,9 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
         email?: string | null;
         phoneNumber?: string | null;
     } | null;
-    status: "NEW" | "COMPLETED" | "CANCELLED" | "PARKED" | "REFUNDED";
-    "status#placedAt": string;
-    type: "DINEIN" | "TAKEAWAY" | "DELIVERY";
+    status: 'NEW' | 'COMPLETED' | 'CANCELLED' | 'PARKED' | 'REFUNDED';
+    'status#placedAt': string;
+    type: 'DINEIN' | 'TAKEAWAY' | 'DELIVERY';
     number: string;
     orderRestaurantId: string;
     orderUserId: string;
@@ -60,45 +175,6 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     registerId?: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
     __typename: string;
-}
-
-export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
-    totalPrice: number;
-    discount?: number;
-    quantity: number;
-    notes?: string | null;
-    image?: IS3Object | null;
-    category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
-    modifierGroups?: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
-    id: string;
-    name: string;
-    image?: IS3Object | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
-    id: string;
-    name: string;
-    choiceDuplicate: number;
-    choiceMin: number;
-    choiceMax: number;
-    collapsedByDefault?: boolean;
-    hideForCustomer?: boolean | null;
-    modifiers?: IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT[];
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    productModifiers?: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
-    image?: IS3Object | null;
 }
 
 export interface ITABIN_ITEMS {
@@ -111,61 +187,6 @@ export interface ITABIN_ITEMS {
     modifiers: IModifier[];
 }
 
-export interface ICategory {
-    categoryId: string;
-    name: string;
-    kitchenName?: string;
-    description?: string;
-    displaySequence: number;
-}
-
-export interface ICategoryProductLink {
-    categoryId: string;
-    productId: string;
-    displaySequence: number;
-}
-
-export interface IProduct {
-    productId: string;
-    name: string;
-    description?: string;
-    kitchenName?: string;
-    tags?: string;
-    price: number;
-    skuCode?: string;
-    totalQuantityAvailable?: number;
-    soldOut?: boolean;
-}
-
-export interface IProductModifierGroupLink {
-    productId: string;
-    modifierGroupId: string;
-    displaySequence: number;
-}
-
-export interface IModifierGroup {
-    modifierGroupId: string;
-    name: string;
-    kitchenName?: string;
-    choiceDuplicate: number;
-    choiceMin: number;
-    choiceMax: number;
-}
-
-export interface IModifierGroupModifierLink {
-    modifierGroupId: string;
-    modifierId: string;
-    displaySequence: number;
-}
-
-export interface IModifier {
-    modifierId: string;
-    name: string;
-    kitchenName?: string;
-    price: number;
-    modifierProductModifierId?: string;
-}
-
 export interface IThirdPartyIntegrations {
     enable: boolean | null;
     shift8: IThirdPartyIntegrationsShift8 | null;
@@ -173,31 +194,10 @@ export interface IThirdPartyIntegrations {
     doshii: IThirdPartyIntegrationsDoshii | null;
 }
 
-export interface IThirdPartyIntegrationsShift8 {
-    enable: boolean;
-    storeApiUrl: string;
-    storeUuid: string;
-    storeLocationNumber: string;
-}
-
-export interface IThirdPartyIntegrationsWizBang {
-    enable: boolean;
-    storeApiUrl: string;
-    username: string;
-    password: string;
-}
-
-export interface IThirdPartyIntegrationsDoshii {
-    enable: boolean;
-    clientId: string;
-    clientSecret: string;
-    locationId: string;
-}
-
 export enum EIntegrationType {
-    SHIFT8 = "SHIFT8",
-    WIZBANG = "WIZBANG",
-    DOSHII = "DOSHII",
+    SHIFT8 = 'SHIFT8',
+    WIZBANG = 'WIZBANG',
+    DOSHII = 'DOSHII',
 }
 
 export interface IINTEGRATION_MAPPINGS {

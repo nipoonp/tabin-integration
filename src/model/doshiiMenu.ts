@@ -1,31 +1,8 @@
-export interface IDOSHII_MENU {
-    description?: string;
-    imageUri?: string;
-    surcounts?: IDOSHII_MENU_SURCOUNT[];
-    options?: IDOSHII_MENU_OPTION[];
-    products?: IDOSHII_MENU_PRODUCT[];
-    categories?: IDOSHII_MENU_CATEGORY[];
-    updatedAt?: string;
-    createdAt?: string;
-    version?: string;
-    uri?: string;
-}
-
 export interface IDOSHII_MENU_SURCOUNT {
     posId: string;
     name: string;
     amount?: number | string;
-    type?: "absolute" | "percentage";
-}
-
-export interface IDOSHII_MENU_OPTION {
-    posId: string;
-    name: string;
-    min?: string;
-    max?: string;
-    variants?: IDOSHII_MENU_VARIANT[];
-    alternateNames?: IDOSHII_MENU_ALTERNATIVE_NAMES;
-    customPosId?: string;
+    type?: 'absolute' | 'percentage';
 }
 
 interface IDOSHII_MENU_ALTERNATIVE_NAMES {
@@ -41,12 +18,40 @@ interface IDOSHII_MENU_ALTERNATIVE_NAMES {
     };
 }
 
+export interface IDOSHII_MENU_PRODUCT_IDS {
+    'gtin-8'?: string;
+    'gtin-12'?: string;
+    'gtin-13'?: string;
+    'gtin-14'?: string;
+    sku?: string;
+    plu?: string;
+    barcodes?: string[];
+}
+
+export interface IDOSHII_MENU_CATEGORY {
+    category?: string;
+    description?: string;
+    displayOrder?: number;
+    imageUri?: string;
+    productIds?: string[];
+}
+
 export interface IDOSHII_MENU_VARIANT {
     posId: string;
     name: string;
     price?: string;
     customPosId?: string;
     alternateNames?: IDOSHII_MENU_ALTERNATIVE_NAMES;
+}
+
+export interface IDOSHII_MENU_OPTION {
+    posId: string;
+    name: string;
+    min?: string;
+    max?: string;
+    variants?: IDOSHII_MENU_VARIANT[];
+    alternateNames?: IDOSHII_MENU_ALTERNATIVE_NAMES;
+    customPosId?: string;
 }
 
 export interface IDOSHII_MENU_INCLUDED_ITEM {
@@ -59,19 +64,11 @@ export interface IDOSHII_MENU_INCLUDED_ITEM {
     alternateNames?: IDOSHII_MENU_ALTERNATIVE_NAMES;
 }
 
-export interface IDOSHII_MENU_BUNDLED_ITEM {
-    posId?: string;
-    name: string;
-    min: string;
-    max: string;
-    includedItems: IDOSHII_MENU_INCLUDED_ITEM[];
-}
-
 export interface IDOSHII_MENU_PRODUCT {
     posId?: string;
     name?: string;
-    type?: "bundle" | "single";
-    availability?: "available" | "unavailable";
+    type?: 'bundle' | 'single';
+    availability?: 'available' | 'unavailable';
     productIds?: IDOSHII_MENU_PRODUCT_IDS;
     customPosId?: string;
     unitPrice?: string;
@@ -86,20 +83,23 @@ export interface IDOSHII_MENU_PRODUCT {
     alternateNames?: IDOSHII_MENU_ALTERNATIVE_NAMES;
 }
 
-export interface IDOSHII_MENU_PRODUCT_IDS {
-    "gtin-8"?: string;
-    "gtin-12"?: string;
-    "gtin-13"?: string;
-    "gtin-14"?: string;
-    sku?: string;
-    plu?: string;
-    barcodes?: string[];
+export interface IDOSHII_MENU {
+    description?: string;
+    imageUri?: string;
+    surcounts?: IDOSHII_MENU_SURCOUNT[];
+    options?: IDOSHII_MENU_OPTION[];
+    products?: IDOSHII_MENU_PRODUCT[];
+    categories?: IDOSHII_MENU_CATEGORY[];
+    updatedAt?: string;
+    createdAt?: string;
+    version?: string;
+    uri?: string;
 }
 
-export interface IDOSHII_MENU_CATEGORY {
-    category?: string;
-    description?: string;
-    displayOrder?: number;
-    imageUri?: string;
-    productIds?: string[];
+export interface IDOSHII_MENU_BUNDLED_ITEM {
+    posId?: string;
+    name: string;
+    min: string;
+    max: string;
+    includedItems: IDOSHII_MENU_INCLUDED_ITEM[];
 }

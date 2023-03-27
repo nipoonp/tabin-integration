@@ -8,8 +8,8 @@ plugins:
 provider:
     name: aws
     runtime: nodejs14.x
-    region: ap-southeast-2
-    profile: "tabin-nipoon"
+    region: ap-south-1
+    profile: "test-user"
     stage: "dev"
     iam:
         role:

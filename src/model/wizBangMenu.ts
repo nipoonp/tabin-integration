@@ -1,65 +1,16 @@
-export interface IWIZBANG_MENU {
-    Menu: IWIZBANG_MENU_MENU[];
-    Courses: any[];
-    Modifiers: IWIZBANG_MENU_MODIFIER[];
-    ModGroups: IWIZBANG_MENU_MOD_GROUP[];
-}
-
-export interface IWIZBANG_MENU_MENU {
-    SuperItemGroupID: null;
-    OutletID: null;
-    SuperItemGroupName: null;
-    SuperItemGroupAbbrev: null;
-    SuperItemGroupOrder: null;
-    WhenUpd: null;
-    WhenDeleted: null;
-    LoginID: null;
-    HideForB: boolean;
-    Food: IWIZBANG_MENU_MENU_FOOD_BEVERAGE[];
-    Beverage: IWIZBANG_MENU_MENU_FOOD_BEVERAGE[];
-}
-
-export interface IWIZBANG_MENU_MENU_FOOD_BEVERAGE {
-    ItemGroupID: number;
-    OutletID: number;
-    ForB: ForB;
-    ItemGroupAbbrev: string;
-    ItemGroupName: string;
-    ItemGroupOrder: number;
-    ItemGroupColor: string;
-    WhenDeleted: null;
-    LoginID: number;
-    WhenUpd: string;
-    ItemGroupFontColor: string;
-    SalesTaxPercent: number;
-    PositionPrompt: null;
-    Surcharge: boolean;
-    SuperItemGroupID: null;
-    SaleCategoryID: null;
-    LoyaltyPoints1RatioNum: null;
-    LoyaltyPoints1RatioDEN: null;
-    LoyaltyPoints1QTY: null;
-    LoyaltyPoints2RatioNUM: null;
-    LoyaltyPoints2RatioDEN: number | null;
-    LoyaltyPoints2QTY: null;
-    LinkCode: null;
-    GLCode: null;
-    GLCode2: null;
-    CST_ICMS: null;
-    ItemGrpType: null;
-    TaxSituation: null;
-    CheckSum: null;
-    SwipeReplacementGrp: boolean;
-    RemoteOverrideGroupID: null;
-    RemoteOverrideGroupName: null;
-    NCMProductCode: null;
-    CEST: null;
-    Items?: IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM[];
-}
-
 export enum ForB {
-    B = "B",
-    F = "F",
+    B = 'B',
+    F = 'F',
+}
+
+export enum SizeName {
+    Default = 'DEFAULT',
+    Option = 'OPTION',
+    Option1 = 'OPTION1',
+    Option2 = 'OPTION2',
+    Option3 = 'OPTION3',
+    Option4 = 'OPTION4',
+    Option5 = 'OPTION5',
 }
 
 export interface IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM {
@@ -139,14 +90,56 @@ export interface IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM {
     CEST: null;
 }
 
-export enum SizeName {
-    Default = "DEFAULT",
-    Option = "OPTION",
-    Option1 = "OPTION1",
-    Option2 = "OPTION2",
-    Option3 = "OPTION3",
-    Option4 = "OPTION4",
-    Option5 = "OPTION5",
+export interface IWIZBANG_MENU_MENU_FOOD_BEVERAGE {
+    ItemGroupID: number;
+    OutletID: number;
+    ForB: ForB;
+    ItemGroupAbbrev: string;
+    ItemGroupName: string;
+    ItemGroupOrder: number;
+    ItemGroupColor: string;
+    WhenDeleted: null;
+    LoginID: number;
+    WhenUpd: string;
+    ItemGroupFontColor: string;
+    SalesTaxPercent: number;
+    PositionPrompt: null;
+    Surcharge: boolean;
+    SuperItemGroupID: null;
+    SaleCategoryID: null;
+    LoyaltyPoints1RatioNum: null;
+    LoyaltyPoints1RatioDEN: null;
+    LoyaltyPoints1QTY: null;
+    LoyaltyPoints2RatioNUM: null;
+    LoyaltyPoints2RatioDEN: number | null;
+    LoyaltyPoints2QTY: null;
+    LinkCode: null;
+    GLCode: null;
+    GLCode2: null;
+    CST_ICMS: null;
+    ItemGrpType: null;
+    TaxSituation: null;
+    CheckSum: null;
+    SwipeReplacementGrp: boolean;
+    RemoteOverrideGroupID: null;
+    RemoteOverrideGroupName: null;
+    NCMProductCode: null;
+    CEST: null;
+    Items?: IWIZBANG_MENU_MENU_FOOD_BEVERAGE_ITEM[];
+}
+
+export interface IWIZBANG_MENU_MENU {
+    SuperItemGroupID: null;
+    OutletID: null;
+    SuperItemGroupName: null;
+    SuperItemGroupAbbrev: null;
+    SuperItemGroupOrder: null;
+    WhenUpd: null;
+    WhenDeleted: null;
+    LoginID: null;
+    HideForB: boolean;
+    Food: IWIZBANG_MENU_MENU_FOOD_BEVERAGE[];
+    Beverage: IWIZBANG_MENU_MENU_FOOD_BEVERAGE[];
 }
 
 export interface IWIZBANG_MENU_MOD_GROUP {
@@ -166,4 +159,11 @@ export interface IWIZBANG_MENU_MODIFIER {
     Modifier: string;
     ModPrice: null;
     ForB: ForB;
+}
+
+export interface IWIZBANG_MENU {
+    Menu: IWIZBANG_MENU_MENU[];
+    Courses: any[];
+    Modifiers: IWIZBANG_MENU_MODIFIER[];
+    ModGroups: IWIZBANG_MENU_MOD_GROUP[];
 }

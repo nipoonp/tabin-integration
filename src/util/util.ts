@@ -1,10 +1,14 @@
-export const taxRate = 0.15;
+const taxRate = 0.15;
 
-export const convertDollarsToCentsReturnInt = (price: number) => parseInt((price * 100).toFixed(0));
+const convertDollarsToCentsReturnInt = (price) => parseInt((price * 100).toFixed(0), 10);
 
-export const convertCentsToDollarsReturnFloat = (price: number) => parseFloat((price / 100).toFixed(2));
+const convertCentsToDollarsReturnFloat = (price) => parseFloat((price / 100).toFixed(2));
 
-export const calculateTaxAmount = (total: number) => {
-    const diff = total / (1 + taxRate);
-    return total - diff;
+const calculateTaxAmount = (total) => {
+  const diff = total / (1 + taxRate);
+  return total - diff;
+};
+
+export {
+  taxRate, convertDollarsToCentsReturnInt, convertCentsToDollarsReturnFloat, calculateTaxAmount,
 };
