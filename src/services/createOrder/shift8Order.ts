@@ -44,10 +44,11 @@ const getShift8Items = (integrationMappings: IINTEGRATION_MAPPINGS, tabinOrder: 
     const shift8Items: SHIFT8_ORDER_ITEM[] = [];
 
     tabinOrder.products.forEach((product) => {
-        const productTotalRounded = convertCentsToDollarsReturnFloat(product.price);
-        const productTotalTax = calculateTaxAmount(product.price);
+        const productPriceMinusDiscount = product.price - (product.discount || 0);
+        const productTotalRounded = convertCentsToDollarsReturnFloat(productPriceMinusDiscount);
+        const productTotalTax = calculateTaxAmount(productPriceMinusDiscount);
         const productTotalTaxRounded = convertCentsToDollarsReturnFloat(productTotalTax);
-        const productTotalExTaxRounded = convertCentsToDollarsReturnFloat(product.price - productTotalTax);
+        const productTotalExTaxRounded = convertCentsToDollarsReturnFloat(productPriceMinusDiscount - productTotalTax);
 
         const shift8Item: SHIFT8_ORDER_ITEM = {
             ItemID: sno,
